@@ -1,7 +1,9 @@
 package synchronization;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.io.*;
+import java.text.*;
 
 import com.mongodb.*;
 
@@ -24,9 +26,9 @@ public class MongodbSynchronization {
 	public static DBCollection errorsColl = null;
 	public static DBCollection qualsColl = null;
 	public static DBCollection customersColl = null;	
-	public static DBCollection responseAndErrorColl = null;
-	public static DBCollection aggregatedResponsesColl = null;
-	public static DBCollection aggregatedErrorsColl = null;
+	public static DBCollection visitsColl = null;
+	public static DBCollection errorCodesColl = null;
+	
 	public static BufferedWriter sessionsOutput = null;
 	public static BufferedWriter leadsOutput = null;
 	public static BufferedWriter ordersOutput = null;
@@ -34,14 +36,36 @@ public class MongodbSynchronization {
 	public static BufferedWriter errorsOutput = null;
 	public static BufferedWriter qualsOutput = null;
 	public static BufferedWriter customersOutput = null;
+	public static BufferedWriter visitsOutput = null;
+	
+	public static File sessionsFile = null;
+	public static File leadsFile = null;
+	public static File ordersFile = null;
+	public static File apiCallsFile = null;
+	public static File errorsFile = null;
+	public static File qualsFile = null;
+	public static File customersFile = null;
+	public static File visitsFile = null;
+	
+	
+	public static String startString = null;
+	public static String endString = null;
 	public static Date start = null;
 	public static Date end = null;
 	
-	public static Random rand = null;
+	public static String fileName = null;
+	public static String outputFileDest = null;
+	public static String filePrefix = null;
+	public static BasicDBObject query = null;
+	public static SimpleDateFormat formatter = null;
+	public static Map<String, String> errorCodes = null;
+
 	
-	static {
+	
+	public static void prepareConnections(String propPath) {
 		
-		rand = new Random();
+		if (propPath == null)
+			propPath = "/home/zengmingyu/scripts/testprop.properties";
 		
 		String mongodbServerIP = null;
 		int port = -1;
@@ -52,29 +76,36 @@ public class MongodbSynchronization {
 		String errorsCollectionName = null;
 		String qualsCollectionName = null;
 		String customersCollectionName = null;
+		String visitsCollectionName = null;
+		String errorCodesCollectionName = null;
 		
 		String databaseName = null;
-		String responseAndErrorCollectionName = null;
-		String aggregatedResponsesCollectionName = null;
-		String aggregatedErrorsCollectionName = null;
 		
-		/*try { 
-			FileInputStream fis = new FileInputStream("/home/zengmingyu/resources/onlineOrderConversion.properties");
+		try { 
+			FileInputStream fis = new FileInputStream(propPath);
 
 			Properties properties = new Properties();
 			properties.load(fis);
-			mongodbServerIP = properties.getProperty("mongodbServerIP", "localhost");
-			port = Integer.valueOf(properties.getProperty("port", "27017"));
-			databaseName = properties.getProperty("databaseName", "online_500");
-			leadsCollectionName = properties.getProperty("leadsCollectionName", "leads");
-			ordersCollectionName = properties.getProperty("ordersCollectionName", "orders");
-			sessionsCollectionName = properties.getProperty("sessionsCollectionName", "sessions");
-			onlineOrderConversionCollectionName = properties.getProperty("onlineOrderConversionCollectionName", "onlineOrderConversion");
-			
-			
-			
-			
-		fis.close();
+			mongodbServerIP = properties.getProperty("mongodb_server_ip", "127.0.0.1");
+			port = Integer.valueOf(properties.getProperty("mongodb_port", "27017"));
+			databaseName = properties.getProperty("database_name", "maize");
+			leadsCollectionName = properties.getProperty("leads_collection_name", "leads");
+			ordersCollectionName = properties.getProperty("orders_collection_name", "orders");
+			sessionsCollectionName = properties.getProperty("sessions_collection_name", "sessions");
+			apicallsCollectionName = properties.getProperty("apicalls_collection_name", "apicalls");
+			errorsCollectionName = properties.getProperty("errors_collection_name", "errors");
+			qualsCollectionName = properties.getProperty("quals_collection_name", "quals");
+			customersCollectionName = properties.getProperty("customers_collection_name", "customers");
+			visitsCollectionName = properties.getProperty("visits_collection_name", "visits");
+			errorCodesCollectionName = properties.getProperty("errorCodes_collection_name", "errorCodes");
+		    outputFileDest = properties.getProperty("output_file_dest", "/home/zengmingyu/data/");
+		    
+		    File dir = new File(outputFileDest);
+		    if (!dir.exists())
+		    	dir.mkdirs();
+
+
+			fis.close();
 		} catch (FileNotFoundException e) 
 		{
 			System.out.println("properties file not found");
@@ -82,10 +113,10 @@ public class MongodbSynchronization {
 		} catch (IOException e) 
 		{
 			System.out.println("FileiInputStream close exception");
-		}*/
+		}
 			
 		
-	    mongodbServerIP = "localhost";
+	    /*mongodbServerIP = "localhost";
 		port = 27017;
 		databaseName = "maize";
 		sessionsCollectionName = "sessions";
@@ -95,10 +126,24 @@ public class MongodbSynchronization {
 		errorsCollectionName = "errors";
 		qualsCollectionName = "quals";
 		customersCollectionName = "customers";
-		responseAndErrorCollectionName = "responseAndError";
-		aggregatedErrorsCollectionName = "aggregatedErrors";
-		aggregatedResponsesCollectionName = "aggregatedResponse";
+		visitsCollectionName = "visits";
+		errorCodesCollectionName = "errorCodes";
 		
+		System.out.println("monogodbServerIP = " + mongodbServerIP);
+		System.out.println("port = " + port);
+		System.out.println("databaseName = " + databaseName);
+		System.out.println("leadsCollectionName = " + leadsCollectionName);
+		System.out.println("sessionsCollectionName = " + sessionsCollectionName);
+		System.out.println("ordersCollectionName = " + ordersCollectionName);
+		System.out.println("apicallsCollectionName = " + apicallsCollectionName);
+		System.out.println("errorsCollectionName = " + errorsCollectionName);
+		System.out.println("qualsCollectionName = " + qualsCollectionName);
+		System.out.println("customersCollectionName = " + customersCollectionName);
+		System.out.println("visitsCollectionName = " + visitsCollectionName);
+		System.out.println("errorCodesCollectionName = " + errorCodesCollectionName);
+		System.out.println("outputFileDest = " + outputFileDest);*/
+
+	    
 
 		
 
@@ -179,104 +224,52 @@ public class MongodbSynchronization {
 	 {
 		 customersColl = db.getCollection(customersCollectionName);
 	 } else {
-		 System.out.println(" apicalls collection doesn't exist");
+		 System.out.println(" customers collection doesn't exist");
 			System.exit(0);
 	 }
 	 
-		//responseAndErrorColl = db.getCollection(responseAndErrorCollectionName);
-		//aggregatedErrorsColl = db.getCollection(aggregatedErrorsCollectionName);
-		//aggregatedResponsesColl = db.getCollection(aggregatedResponsesCollectionName);
-		
-		try {
-
-			File sessionsFile = new File("sessions.txt");
-			File leadsFile = new File("leads.txt");
-			File ordersFile = new File("orders.txt");
-			File apiCallsFile = new File("apiCalls.txt");
-			File errorsFile = new File("errors.txt");
-			File qualsFile = new File("quals.txt");
-			File customersFile = new File("customers.txt");
-			
-			sessionsOutput = null;
-			leadsOutput = null;
-			ordersOutput = null;
-			apiCallsOutput = null;
-			errorsOutput = null;
-			qualsOutput = null;
-			customersOutput = null;
-
-			
-			if (!sessionsFile.exists())
-				sessionsFile.createNewFile();
-			
-			if (!leadsFile.exists())
-				leadsFile.createNewFile();
-		
-			if (!ordersFile.exists())
-				ordersFile.createNewFile();
-		
-			if (!apiCallsFile.exists())
-				apiCallsFile.createNewFile();
-		
-			if (!errorsFile.exists())
-				errorsFile.createNewFile();
-		
-			if (!qualsFile.exists())
-				qualsFile.createNewFile();
-		
-			if (!customersFile.exists())
-				customersFile.createNewFile();
-		
-		sessionsOutput = new BufferedWriter(new FileWriter(sessionsFile));
-		leadsOutput = new BufferedWriter(new FileWriter(leadsFile));
-		ordersOutput = new BufferedWriter(new FileWriter(ordersFile));
-		apiCallsOutput = new BufferedWriter(new FileWriter(apiCallsFile));
-		errorsOutput = new BufferedWriter(new FileWriter(errorsFile));
-		qualsOutput = new BufferedWriter(new FileWriter(qualsFile));
-		customersOutput = new BufferedWriter(new FileWriter(customersFile));
+	 if (db.collectionExists(visitsCollectionName) == true) 
+	 {
+		 visitsColl = db.getCollection(visitsCollectionName);
+	 } else {
+		 System.out.println(" visits collection doesn't exist");
+			System.exit(0);
+	 }
+	 
+	 if (db.collectionExists(errorCodesCollectionName) == true) 
+	 {
+		 errorCodesColl = db.getCollection(errorCodesCollectionName);
+	 } else {
+		 System.out.println(" errorCodes collection doesn't exist");
+			System.exit(0);
+	 }
+	 
 		
 		
-		
-		
-		} catch (Exception e) {
-			System.out.println("file not found");
-		}
-
-		
-		
-		
-	    end = new Date();
-		start = (Date) end.clone();
-		start.setMinutes(start.getMinutes() - 1);
-		
-
+	    
 	}
 
 	public static void getFromSessions()
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = sessionsColl.find();
-		//DBObject sessionTmp = sessionsColl.findOne();
-		//System.out.println(processSession(sessionTmp).toString());
+		DBCursor result = sessionsColl.find(query);
 	
+		//DBCursor result = sessionsColl.find();
 		
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject sessionDBObject = processSession(result.next());
-				sessionsOutput.write(sessionDBObject.toString() + "\n");
-				System.out.print(sessionDBObject.toString() + "\n");
+				//if (count == 501)
+					//break;
+				StringBuilder sessionBuilder = processSession(result.next());
+				sessionsOutput.write(sessionBuilder.toString() + "\n");
+				//System.out.print(sessionBuilder.toString() + "\n");
 			}
 			
 			sessionsOutput.flush();
 			sessionsOutput.close();
-			
+			System.out.println("session count = " + count);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -290,25 +283,25 @@ public class MongodbSynchronization {
 	
 	public static void getFromCustomers()
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = customersColl.find();
+		DBCursor result = customersColl.find(query);
+		//DBCursor result = customersColl.find();
 		
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject customerDBObject = processCustomer(result.next());
+				//if (count == 501)
+					//break;
+				StringBuilder customerDBObject = processCustomer(result.next());
 				customersOutput.write(customerDBObject.toString() + "\n");
-				System.out.print(customerDBObject.toString() + "\n");
+				//System.out.print(customerDBObject.toString() + "\n");
 				
 			}
 			customersOutput.flush();
 			customersOutput.close();
+			System.out.println("customer count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -322,24 +315,24 @@ public class MongodbSynchronization {
 	
 	public static void getFromApiCalls()
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = apiCallsColl.find();
-		
+	    DBCursor result = apiCallsColl.find(query);
+		//DBCursor result = apiCallsColl.find();
+			
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject apiCallsDBObject = processApiCall(result.next());
+				//if (count == 501)
+					//break;
+				StringBuilder apiCallsDBObject = processApiCall(result.next());
 				apiCallsOutput.write(apiCallsDBObject.toString() + "\n");
-				System.out.print(apiCallsDBObject.toString() + "\n");
+				//System.out.print(apiCallsDBObject.toString() + "\n");
 			}
 			apiCallsOutput.flush();
 			apiCallsOutput.close();
+			System.out.println("apicall count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -354,25 +347,25 @@ public class MongodbSynchronization {
 	
 	public static void getFromQuals()
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = qualsColl.find();
-		
+		DBCursor result = qualsColl.find(query);
+		//DBCursor result = qualsColl.find();
+			
 		try {
 		    int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject qualDBObject = processQual(result.next());
+				//if (count == 501)
+					//break;
+				StringBuilder qualDBObject = processQual(result.next());
 				qualsOutput.write(qualDBObject.toString() + "\n");
-				System.out.print(qualDBObject.toString() + "\n");
+				//System.out.print(qualDBObject.toString() + "\n");
 				
 			}
 			qualsOutput.flush();
 			qualsOutput.close();
+			System.out.println("qual count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -385,24 +378,24 @@ public class MongodbSynchronization {
 	
 	public static void getFromErrors() 
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = errorsColl.find();
+		DBCursor result = errorsColl.find(query);
+		//DBCursor result = errorsColl.find();
 		
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10) 
-					break;
-				BasicDBObject errorDBObject = processError(result.next());
+				//if (count == 501) 
+					//break;
+				StringBuilder errorDBObject = processError(result.next());
 				errorsOutput.write(errorDBObject.toString() + "\n");
-				System.out.print(errorDBObject.toString() + "\n");
+				//System.out.print(errorDBObject.toString() + "\n");
 			}
 			errorsOutput.flush();
 			errorsOutput.close();
+			System.out.println("error count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -419,24 +412,24 @@ public class MongodbSynchronization {
 
 	public static void getFromOrders() 
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = ordersColl.find();
-		
+		DBCursor result = ordersColl.find(query);
+		//DBCursor result = ordersColl.find();
+			
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject orderDBObject = processOrder(result.next());
+				//if (count == 501)
+					//break;
+				StringBuilder orderDBObject = processOrder(result.next());
 				ordersOutput.write(orderDBObject.toString() + "\n");
-				System.out.print(orderDBObject.toString() + "\n");
+				//System.out.print(orderDBObject.toString() + "\n");
 			}
 			ordersOutput.flush();
 			ordersOutput.close();
+			System.out.println("order count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -453,24 +446,24 @@ public class MongodbSynchronization {
 	
 	public static void getFromLeads() 
 	{
-		BasicDBObject conditions = new BasicDBObject("$gt", start);
-		conditions.append("$lt", end);
-		BasicDBObject query = new BasicDBObject("dateTime", conditions);
-		DBCursor result = leadsColl.find();
+		DBCursor result = leadsColl.find(query);
+		//DBCursor result = leadsColl.find();
 		
 		try {
 			int count = 0;
 			while (result.hasNext())
 			{
 				count++;
-				if (count == 10)
-					break;
-				BasicDBObject leadDBObject = processLead(result.next());
+				//if (count == 501)
+					//break;
+				StringBuilder leadDBObject = processLead(result.next());
 				leadsOutput.write(leadDBObject.toString() + "\n");
-				System.out.print(leadDBObject.toString() + "\n");
+				//System.out.print(leadDBObject.toString() + "\n");
 			}
 			leadsOutput.flush();
 			leadsOutput.close();
+			System.out.println("lead count = " + count);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -485,79 +478,155 @@ public class MongodbSynchronization {
 		
 	}
 
-
-
-	
-	
-	public static BasicDBObject processSession(DBObject session)
+	public static void getFromVisits() 
 	{
-		BasicDBObject output = new BasicDBObject();
+		DBCursor result = visitsColl.find(query);
+		//DBCursor result = visitsColl.find();
+		
+		try {
+			int count = 0;
+			while (result.hasNext())
+			{
+				count++;
+				//if (count == 501) 
+					//break;
+				StringBuilder visitDBObject = processVisit(result.next());
+				visitsOutput.write(visitDBObject.toString() + "\n");
+				//System.out.print(visitDBObject.toString() + "\n");
+			}
+			visitsOutput.flush();
+			visitsOutput.close();
+			System.out.println("visit count = " + count);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			result.close();
+		}
+	
+		//DBObject errorTmp = errorsColl.findOne();
+		//System.out.println(processError(errorTmp).toString());
+		
+	
+	
+		
+	}
+
+
+
+	
+	
+	public static StringBuilder processSession(DBObject session)
+	{
+		StringBuilder output = new StringBuilder();
 		
 		String userAgentString = null;
-		if (session.containsField("userAgent") && session.get("userAgent") != null)
+		if (session != null && session.containsField("userAgent") && 
+				session.get("userAgent") != null)
 			userAgentString = (String) session.get("userAgent");
 		BasicDBObject userAgentDBObject = parseUserAgent(userAgentString);
 		
-		ArrayList<String> apiCalls  = new ArrayList<String>();
-		if (session.containsField("apiCalls") && session.get("apiCalls") != null)
+		String userAgent_operatingSystem  = null;
+		if (userAgentDBObject != null && userAgentDBObject.containsField("operatingSystem") && 
+				userAgentDBObject.get("operatingSystem") != null)
+			userAgent_operatingSystem = userAgentDBObject.getString("operatingSystem");
+		
+		String userAgent_browser  = null;
+		if (userAgentDBObject != null && userAgentDBObject.containsField("browser") && 
+				userAgentDBObject.get("browser") != null)
+			userAgent_browser = userAgentDBObject.getString("browser");
+		
+		String userAgent_deviceType  = null;
+		if (userAgentDBObject != null && userAgentDBObject.containsField("deviceType") && 
+				userAgentDBObject.get("deviceType") != null)
+			userAgent_deviceType = userAgentDBObject.getString("deviceType");
+		
+		String userAgent_mobileDevice  = null;
+		if (userAgentDBObject != null && userAgentDBObject.containsField("mobileDevice") && 
+				userAgentDBObject.get("mobileDevice") != null)
+			userAgent_mobileDevice = userAgentDBObject.getString("mobileDevice");
+		
+		
+		StringBuilder apiCalls  = new StringBuilder();
+		if (session != null && session.containsField("apiCalls") && 
+				session.get("apiCalls") != null &&
+				session.get("apiCalls") instanceof ArrayList)
 		{
 			ArrayList<ObjectId> apiCalls1 = (ArrayList<ObjectId>) session.get("apiCalls");
 			if (!apiCalls1.isEmpty())
 			{
 				for (ObjectId apiCall : apiCalls1)
-				apiCalls.add(apiCall.toString());
+					apiCalls.append(apiCall.toString() + '\002');
+				apiCalls.deleteCharAt(apiCalls.length() - 1);
 			}
 		}
 		
 		
-		String dateTime = "NULL";
-		if (session.containsField("dateTime") && session.get("dateTime") != null)
-			dateTime = session.get("dateTime").toString();
+		Date dateTime = null;
+		if (session != null && session.containsField("dateTime") && 
+				session.get("dateTime") != null 
+				&& session.get("dateTime") instanceof Date)
+			dateTime = (Date) session.get("dateTime");	
 		
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
 		String type = "SESSION";
-		if (session.containsField("type") && session.get("type") != null)
+		if (session != null && session.containsField("type") && 
+				session.get("type") != null)
 			type = (String) session.get("type");
 		
-		String session_id = "NULL"; 
-		if (session.containsField("_id") && session.get("_id") != null)
+		String session_id = null; 
+		if (session != null && session.containsField("_id") && 
+				session.get("_id") != null)
 			session_id = session.get("_id").toString();
 		
-		String lead_id = "NULL";
-		if (session.containsField("lead") && session.get("lead") != null)
+		String lead_id = null;
+		if (session != null && session.containsField("lead") && 
+				session.get("lead") != null)
 			lead_id = session.get("lead").toString();
 
-		String visit_id = "NULL";
-		if (session.containsField("visit") && session.get("visit") != null)
+		String visit_id = null;
+		if (session != null && session.containsField("visit") && session.get("visit") != null)
 			visit_id = session.get("visit").toString();
 		
-		String order_id = "NULL";
-		if (session.containsField("order") && session.get("order") != null)
+		String order_id = null;
+		if (session != null && session.containsField("order") && session.get("order") != null)
 			order_id = session.get("order").toString();
 		
 		boolean ordered = false;
-		if (order_id != "NULL")
+		if (order_id != null)
 			ordered = true;
 		
 		
-		ArrayList<String> quals  = new ArrayList<String>();
-		if (session.containsField("quals") && session.get("quals") != null)
+		StringBuilder quals  = new StringBuilder();
+		if (session != null && session.containsField("quals") && session.get("quals") != null && 
+				session.get("quals") instanceof ArrayList)
 		{
 			ArrayList<ObjectId> quals1 = (ArrayList<ObjectId>) session.get("quals");
 			if (!quals1.isEmpty())
 			{
 				for (ObjectId qual : quals1)
-				quals.add(qual.toString());
+					quals.append(qual.toString() + '\002');
+				quals.deleteCharAt(quals.length() - 1);
 			}
 		}
 		
-		ArrayList<String> errs  = new ArrayList<String>();
-		if (session.containsField("errs") && session.get("errs") != null)
+		StringBuilder errs  = new StringBuilder();
+		if (session != null && session.containsField("errs") && session.get("errs") != null &&
+				session.get("errs") instanceof ArrayList)
 		{
 			ArrayList<ObjectId> errs1 = (ArrayList<ObjectId>) session.get("errs");
 			if (!errs1.isEmpty())
 			{
 				for (ObjectId err : errs1)
-					errs.add(err.toString());
+					errs.append(err.toString() + '\002');
+				errs.deleteCharAt(errs.length() - 1);
 			}
 		}
 	
@@ -565,80 +634,131 @@ public class MongodbSynchronization {
 		
 		
 		DBObject agent = new BasicDBObject();
-		if (session.containsField("agent") && session.get("agent") != null)
+		String agent_id = null;
+		String agent_firstName = null;
+		String agent_lastName = null;
+		String agent_callCenter = null;
+		StringBuilder agentStr = new StringBuilder();
+		int callCenter_online = 1;
+		if (session != null && session.containsField("agent") && session.get("agent") != null &&
+				session.get("agent") instanceof DBObject)
+		{
 			agent = (DBObject) session.get("agent");
+			callCenter_online = 0;
+		}	
+		if (agent.containsField("id") && agent.get("id") != null)
+			agent_id = agent.get("id").toString(); 
+		if (agent.containsField("firstName") && agent.get("firstName") != null)
+			agent_firstName = agent.get("firstName").toString(); 
+		if (agent.containsField("lastName") && agent.get("lastName") != null)
+			agent_lastName = agent.get("lastName").toString(); 
+		if (agent.containsField("callCenter") && agent.get("callCenter") != null)
+			agent_callCenter = agent.get("callCenter").toString(); 
 		
-		output.append("userAgent", userAgentDBObject);
-		output.append("apiCalls", apiCalls);
-		output.append("dateTime", dateTime);
-		output.append("type", type);
-		output.append("id", session_id);
-		output.append("lead", lead_id);
-		output.append("visit", visit_id);
-		output.append("ordered", ordered);
-		output.append("order", order_id);
-		output.append("quals", quals);
-		output.append("errs", errs);
-		output.append("agent", agent);
+		agentStr.append(agent_firstName + '_');
+		agentStr.append(agent_lastName );
+		agentStr.append("(" + agent_id + ")");
+	
+		
+		output.append(userAgent_operatingSystem + '\001');
+		output.append(userAgent_browser + '\001');
+		output.append(userAgent_deviceType + '\001');
+		output.append(userAgent_mobileDevice + '\001');
+		output.append(apiCalls.toString() + '\001');
+		output.append(date_time + '\001');
+		output.append(type + '\001');
+		output.append(session_id + '\001');
+		output.append(lead_id + '\001');
+		output.append(visit_id + '\001');
+		output.append(ordered);
+		output.append('\001');
+		output.append(order_id + '\001');
+		output.append(quals.toString() + '\001');
+		output.append(errs.toString() + '\001');
+		output.append(callCenter_online);
+		output.append('\001');
+		output.append(agentStr.toString() + '\001');
+		output.append(agent_callCenter);
+		
 	
 		
 		
 		return output;
 	}
 	
-	public static BasicDBObject processCustomer(DBObject customer)
+	public static StringBuilder processCustomer(DBObject customer)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
 		
 		String type = "CUSTOMER";
-		if (customer.containsField("type") && customer.get("type") != null)
+		if (customer != null && customer.containsField("type") &&
+				customer.get("type") != null)
 			type = (String) customer.get("type");
 		
-		String dateTime = "NULL";
-		if (customer.containsField("dateTime") && customer.get("dateTime") != null)
-			dateTime = customer.get("dateTime").toString();
+		Date dateTime = null;
+		if (customer != null && customer.containsField("dateTime") && 
+				customer.get("dateTime") != null &&
+				customer.get("dateTime") instanceof Date)
+			dateTime = (Date) customer.get("dateTime");	
 		
-		String customer_id = "NULL";
-		if (customer.containsField("_id") && customer.get("_id") != null)
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
+		String customer_id = null;
+		if (customer != null && customer.containsField("_id") && 
+				customer.get("_id") != null)
 			customer_id = customer.get("_id").toString();
 		
-		String firstName = "NULL";
-		if (customer.containsField("firstName") && customer.get("firstName") != null)
+		String firstName = null;
+		if (customer != null && customer.containsField("firstName") && 
+				customer.get("firstName") != null)
 			firstName = (String) customer.get("firstName");
 		
-		String lastName = "NULL";
-		if (customer.containsField("lastName") && customer.get("lastName") != null)
+		String lastName = null;
+		if (customer != null && customer.containsField("lastName") &&
+				customer.get("lastName") != null)
 			lastName = (String) customer.get("lastName");
 		
-		String email = "NULL";
-		if (customer.containsField("email") && customer.get("email") != null)
+		String email = null;
+		if (customer != null && customer.containsField("email") && 
+				customer.get("email") != null)
 			email = (String) customer.get("email");
 		
-		String phoneNumber = "NULL";
-		if (customer.containsField("phoneNumber") && customer.get("phoneNumber") != null)
+		String phoneNumber = null;
+		if (customer != null && customer.containsField("phoneNumber") &&
+				customer.get("phoneNumber") != null)
 			phoneNumber = (String) customer.get("phoneNumber");
 		
-		ArrayList<String> leads = new ArrayList<String>();
-		if (customer.containsField("leads") && customer.get("leads") != null)
+		StringBuilder leads = new StringBuilder();
+		if (customer != null && customer.containsField("leads") &&
+				customer.get("leads") != null &&
+				customer.get("leads") instanceof ArrayList)
 		{
 			ArrayList<ObjectId> leads1 = (ArrayList<ObjectId>) customer.get("leads");
-			if (!leads.isEmpty())
+			if (!leads1.isEmpty())
 			{
 				for (ObjectId lead : leads1)
-					leads.add(lead.toString());
+					leads.append(lead.toString() + '\002');
+				leads.deleteCharAt(leads.length() - 1);
 			}
 		}
 		
 		
 
-		output.append("type", type);
-		output.append("dateTime", dateTime);
-		output.append("id", customer_id);
-		output.append("firstName", firstName);
-		output.append("lastName", lastName);
-		output.append("email", email);
-		output.append("phoneNumber", phoneNumber);
-		output.append("leads", leads);
+		output.append(type + '\001');
+		output.append(date_time + '\001');
+		output.append(customer_id + '\001');
+		output.append(firstName + '\001');
+		output.append(lastName + '\001');
+		output.append(email + '\001');
+		output.append(phoneNumber + '\001');
+		output.append(leads.toString());
 		
 		
 		
@@ -646,28 +766,45 @@ public class MongodbSynchronization {
 		return output;
 	}
 	
-	public static BasicDBObject processApiCall(DBObject apiCall)
+	public static StringBuilder processApiCall(DBObject apiCall)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
+			
+		Date dateTime = null;
+		if (apiCall != null && apiCall.containsField("dateTime") && apiCall.get("dateTime") != null &&
+				apiCall.get("dateTime") instanceof Date)
+			dateTime = (Date) apiCall.get("dateTime");	
 		
-		String dateTime = "NULL";
-		if (apiCall.containsField("dateTime") && apiCall.get("dateTime") != null)
-			dateTime = apiCall.get("dateTime").toString();
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
 		
-		String endpoint = "NULL";
-		if (apiCall.containsField("endpoint") && apiCall.get("endpoint") != null)
+		String endpoint = null;
+		if (apiCall != null && apiCall.containsField("endpoint") && 
+				apiCall.get("endpoint") != null)
 			endpoint = (String) apiCall.get("endpoint");
 		
 		boolean isResponse = false;
-		if (apiCall.containsField("isResponse") && apiCall.get("isResponse") != null)
+		if (apiCall != null && apiCall.containsField("isResponse") && 
+				apiCall.get("isResponse") != null 
+				&& apiCall.get("isResponse") instanceof Boolean)
 			isResponse = (boolean) apiCall.get("isResponse");
 		
 		boolean isRequest = false;
-		if (apiCall.containsField("isRequest") && apiCall.get("isRequest") != null)
+		if (apiCall != null && apiCall.containsField("isRequest") && 
+				apiCall.get("isRequest") != null
+				&& apiCall.get("isRequest") instanceof Boolean)
 			isRequest = (boolean) apiCall.get("isRequest");
 		
 		int duration = 0;
-		if (apiCall.containsField("duration") && apiCall.get("duration") != null)
+		if (apiCall != null && apiCall.containsField("duration") && 
+				apiCall.get("duration") != null)
 			duration = (int) apiCall.get("duration");
 		
 		int buckets = 0;
@@ -679,16 +816,20 @@ public class MongodbSynchronization {
 			buckete = (tmp + 1) * 5;
 		}
 		
-		String apiCall_id = "NULL";
-		if (apiCall.containsField("_id") && apiCall.get("_id") != null)
+		String apiCall_id = null;
+		if (apiCall != null && apiCall.containsField("_id") && 
+				apiCall.get("_id") != null)
 			apiCall_id = apiCall.get("_id").toString();
 		
-		String session_id = "NULL";
-		if (apiCall.containsField("session") && apiCall.get("session") != null)
+		String session_id = null;
+		if (apiCall != null && apiCall.containsField("session") &&
+				apiCall.get("session") != null)
 			session_id =  apiCall.get("session").toString();
 		
 		boolean isError = false;
-		if (apiCall.containsField("isError") && apiCall.get("isError") != null)
+		if (apiCall != null && apiCall.containsField("isError") &&
+				apiCall.get("isError") != null &&
+				apiCall.get("isError") instanceof Boolean)
 			isError = (boolean) apiCall.get("isError");
 		
 		boolean isTimedout = false;
@@ -713,17 +854,21 @@ public class MongodbSynchronization {
 		DBObject payload = null;
 		if (isQual)
 		{
-		if (apiCall.containsField("payload") && apiCall.get("payload") != null)
+		if (apiCall != null && apiCall.containsField("payload") && apiCall.get("payload") != null &&
+				apiCall.get("payload") instanceof DBObject)
 			payload = (DBObject) apiCall.get("payload");
 		}
 		
 		DBObject serviceLocation = new BasicDBObject();
-		ArrayList<BasicDBObject> providers1 = new ArrayList<BasicDBObject>();
+		//StringBuilder providers1 = new StringBuilder();
+		StringBuilder products1 = new StringBuilder();		
 		int numberOfProducts = 0;
 		
 		if (isQualResponse)
 		{
-		if (payload.containsField("Providers") && payload.get("Providers") != null)
+		if (payload != null && payload.containsField("Providers") 
+				&& payload.get("Providers") != null 
+				&& payload.get("Providers") instanceof ArrayList)
 		{
 			ArrayList<DBObject> providers = (ArrayList<DBObject>) payload.get("Providers");
 			if (!providers.isEmpty())
@@ -734,32 +879,33 @@ public class MongodbSynchronization {
 				while (it1.hasNext())
 				{
 					DBObject provider = (DBObject) it1.next();
-					BasicDBObject provider1 = new BasicDBObject();
-					String providerCode = "NULL";
-					String providerName = "NULL";
+					//BasicDBObject provider1 = new BasicDBObject();
+					String providerCode = null;
+					String providerName = null;
 					if (provider.containsField("ProviderCode") && provider.get("ProviderCode") != null)
 						providerCode = (String) provider.get("ProviderCode");					
 					if (provider.containsField("ProviderName") && provider.get("ProviderName") != null)
 						providerName = (String) provider.get("ProviderName");
 					
-					provider1.append("providerCode", providerCode);
-					provider1.append("providerName", providerName);
+					//provider1.append("providerCode", providerCode);
+					//provider1.append("providerName", providerName);
 					
-					ArrayList<BasicDBObject> products1 = new ArrayList<BasicDBObject>();
-				if (provider.containsField("Products") && provider.get("Products") != null)
+				//StringBuilder products1 = new StringBuilder();
+				if (provider.containsField("Products") && provider.get("Products") != null &&
+						provider.get("Products") instanceof ArrayList)
 				{
-					ArrayList<BSONObject> products = (ArrayList<BSONObject>) provider.get("Products");
+					ArrayList<DBObject> products = (ArrayList<DBObject>) provider.get("Products");
 					if (!products.isEmpty())
 					{
 						Iterator it2 = products.iterator();
 						
 						while (it2.hasNext())
 						{
-							BSONObject product = (BSONObject) it2.next();
-							BasicDBObject product1 = new BasicDBObject();
-							String productCode = "NULL";
-							String productName = "NULL";
-							String productDescription = "NULL";
+							DBObject product = (DBObject) it2.next();
+							StringBuilder product1 = new StringBuilder();
+							String productCode = null;
+							String productName = null;
+							String productDescription = null;
 							if (product.containsField("ProductCode") && product.get("ProductCode") != null)
 								productCode = (String) product.get("ProductCode");
 							if (product.containsField("ProductName") && product.get("ProductName") != null)
@@ -767,10 +913,14 @@ public class MongodbSynchronization {
 							if (product.containsField("ProductDescription") && product.get("ProductDescription") != null)
 								productDescription = (String) product.get("ProductDescription");
 							
-							product1.append("productCode", productCode);
-							product1.append("productName", productName);
-							product1.append("productDescription", productDescription);
-							products1.add(product1);
+							product1.append("providerCode" + '\004' + providerCode + '\003');
+							product1.append("providerName" + '\004' + providerName + '\003');
+							product1.append("productCode" + '\004' + productCode + '\003');
+							product1.append("productName" + '\004' + productName + '\003');
+							product1.append("productDescription" + '\004' + productDescription);
+							
+						
+							products1.append(product1.toString() + '\002');
 							
 						
 						}
@@ -778,48 +928,152 @@ public class MongodbSynchronization {
 						
 					}
 				}
-				provider1.append("products", products1);
-				providers1.add(provider1);
+				//provider1.append("products", products1);
+				//providers1.add(provider1);
 				}
 			}
+			if (products1.length() > 0)
+				products1.deleteCharAt(products1.length() - 1);
 		
 		}
 		}
 		
-		if (isQualRequest)
-		{
-			if (payload.containsField("ServiceLocation") && payload.get("ServiceLocation") != null) 
+	
+			if (isQualRequest && payload != null && payload.containsField("ServiceLocation") && 
+					payload.get("ServiceLocation") != null &&
+					payload.get("ServiceLocation") instanceof DBObject) 
 			{
 				serviceLocation = (DBObject) payload.get("ServiceLocation");
 			}
-		}
+	
+		
+		String ZipCode = null;
+		String Zip4 = null;
+		String TelephoneNumber = null;
+		String StateCode = null;
+		String Nxx = null;
+		String Npa = null;
+		String Country = null;
+		String City = null;
+		String ApartmentNumber = null;
+		String AddressLine4 = null;
+		String AddressLine3 = null;
+		String AddressLine2 = null;
+		String AddressLine1 = null;
+		
+		if (serviceLocation != null && serviceLocation.containsField("ZipCode") && 
+				serviceLocation.get("ZipCode") != null)
+			ZipCode = (String) serviceLocation.get("ZipCode");
+		
+		if (serviceLocation != null && serviceLocation.containsField("Zip4") && 
+				serviceLocation.get("Zip4") != null)
+			Zip4 = (String) serviceLocation.get("Zip4");
+		
+		if (serviceLocation != null && serviceLocation.containsField("TelephoneNumber") &&
+				serviceLocation.get("TelephoneNumber") != null)
+			TelephoneNumber = (String) serviceLocation.get("TelephoneNumber");
+		
+		if (serviceLocation != null && serviceLocation.containsField("StateCode") && 
+				serviceLocation.get("StateCode") != null)
+			StateCode = (String) serviceLocation.get("StateCode");
+		
+		if (serviceLocation != null && serviceLocation.containsField("Nxx") && 
+				serviceLocation.get("Nxx") != null)
+			Nxx = (String) serviceLocation.get("Nxx");
+		
+		if (serviceLocation != null && serviceLocation.containsField("Npa") && 
+				serviceLocation.get("Npa") != null)
+			Npa = (String) serviceLocation.get("Npa");
+		
+		if (serviceLocation != null && serviceLocation.containsField("Country") && 
+				serviceLocation.get("Country") != null)
+			Country = (String) serviceLocation.get("Country");
+		
+		if (serviceLocation != null && serviceLocation.containsField("City") && 
+				serviceLocation.get("City") != null)
+			City = (String) serviceLocation.get("City");
+		
+		if (serviceLocation != null && serviceLocation.containsField("ApartmentNumber") &&
+				serviceLocation.get("ApartmentNumber") != null)
+			ApartmentNumber = (String) serviceLocation.get("ApartmentNumber");
+		
+		if (serviceLocation != null && serviceLocation.containsField("AddressLine4") && 
+				serviceLocation.get("AddressLine4") != null)
+			AddressLine4 = (String) serviceLocation.get("AddressLine4");
+		
+		if (serviceLocation != null && serviceLocation.containsField("AddressLine3") &&
+				serviceLocation.get("AddressLine3") != null)
+			AddressLine3 = (String) serviceLocation.get("AddressLine3");
+		
+		if (serviceLocation != null && serviceLocation.containsField("AddressLine2") && 
+				serviceLocation.get("AddressLine2") != null)
+			AddressLine2 = (String) serviceLocation.get("AddressLine2");
+		
+		if (serviceLocation != null && serviceLocation.containsField("AddressLine1") && 
+				serviceLocation.get("AddressLine1") != null)
+			AddressLine1 = (String) serviceLocation.get("AddressLine1");
+		
+		StringBuilder serviceLocation1 = new StringBuilder();
+		
+		serviceLocation1.append("zipCode" + '\003' + ZipCode + '\002');
+		serviceLocation1.append("zip4" + '\003' + Zip4 + '\002');
+		serviceLocation1.append("telephoneNumber" + '\003' + TelephoneNumber + '\002');
+		serviceLocation1.append("stateCode" + '\003' + StateCode + '\002');
+		serviceLocation1.append("Nxx" + '\003' + Nxx + '\002');
+		serviceLocation1.append("Npa" + '\003' + Npa + '\002');
+		serviceLocation1.append("country" + '\003' + Country + '\002');
+		serviceLocation1.append("city" + '\003' + City + '\002');
+		serviceLocation1.append("apartmentNumber" + '\003' + ApartmentNumber + '\002');
+		serviceLocation1.append("addressLine4" + '\003' + AddressLine4 + '\002');
+		serviceLocation1.append("addressLine3" + '\003' + AddressLine3 + '\002');
+		serviceLocation1.append("addressLine2" + '\003' + AddressLine2 + '\002');
+		serviceLocation1.append("addressLine1" + '\003' + AddressLine1);
+		
+		
 		
 		String type = "APICALL";
-		if (apiCall.containsField("type") && apiCall.get("type") != null)
+		if (apiCall != null && apiCall.containsField("type") && apiCall.get("type") != null)
 			type = (String) apiCall.get("type");
 		
-		String qual = "NULL";
-		if (apiCall.containsField("qual") && apiCall.get("qual") != null)
-			qual = (String) apiCall.get("qual");
+		String qual_id = null;
+		if (apiCall != null && apiCall.containsField("qual") && apiCall.get("qual") != null)
+			qual_id = (String) apiCall.get("qual");
 		
 		
-		output.append("type", type);
-		output.append("dateTime", dateTime);
-		output.append("endpoint", endpoint);
-		output.append("isResponse", isResponse);
-		output.append("isRequest", isRequest);
-		output.append("isError", isError);
-		output.append("duration", duration);
-		output.append("buckets", buckets);
-		output.append("buckete", buckete);
-		output.append("id", apiCall_id);
-		output.append("session", session_id);
-		output.append("isTimedout", isTimedout);
-		output.append("isQual", isQual);
-		output.append("qual", qual);
-		output.append("isPositiveQual", isPositiveQual);
-		
-		BasicDBObject qualInfo = new BasicDBObject();
+		output.append(type + '\001');
+		output.append(date_time + '\001');
+		output.append(endpoint + '\001');
+		output.append(isResponse);
+		output.append('\001');
+		output.append(isRequest);
+		output.append('\001');
+		output.append(isError);
+		output.append('\001');
+		output.append(duration);
+		output.append('\001');
+		output.append(buckets);
+		output.append('\001');
+		output.append(buckete);
+		output.append('\001');
+		output.append(apiCall_id + '\001');
+		output.append(session_id + '\001');
+		output.append(isTimedout);
+		output.append('\001');
+		output.append(isQual);
+		output.append('\001');
+		output.append(qual_id + '\001');
+		output.append(isQualResponse);
+		output.append('\001');
+		output.append(isQualRequest);
+		output.append('\001');		
+		output.append(isPositiveQual);
+		output.append('\001');				
+		output.append(numberOfProducts);
+		output.append('\001');		
+		output.append(products1.toString() + '\001');
+		output.append(serviceLocation1.toString());
+
+		/*BasicDBObject qualInfo = new BasicDBObject();
 		qualInfo.append("isQualResponse", isQualResponse);
 		qualInfo.append("isQualRequest", isQualRequest);
 		qualInfo.append("isPositiveQual", isPositiveQual);
@@ -827,177 +1081,345 @@ public class MongodbSynchronization {
 		qualInfo.append("providers", providers1);
 		qualInfo.append("serviceLocation", serviceLocation);
 		
-		//output.append("qualInfo", qualInfo);
+		output.append("qualInfo", qualInfo);*/
 		
 		
 		return output;
 	}
 
-	public static BasicDBObject processQual(DBObject qual)
+	public static StringBuilder processQual(DBObject qual)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
 		
 		String type= "QUAL";
-		if (qual.containsField("type") && qual.get("type") != null)
+		if (qual != null && qual.containsField("type") && qual.get("type") != null)
 			type = (String) qual.get("type");
 		
-		String qual_id= "NULL";
-		if (qual.containsField("_id") && qual.get("_id") != null)
+		String qual_id= null;
+		if (qual != null && qual.containsField("_id") && qual.get("_id") != null)
 			qual_id = qual.get("_id").toString();
 		
-		String dateTime = "NULL";
-		if (qual.containsField("dateTime") && qual.get("dateTime") != null)
-			dateTime = qual.get("dateTime").toString();
+		//System.out.println("qual_id = " + qual_id);
+		Date dateTime = null;
+		if (qual != null && qual.containsField("dateTime") && qual.get("dateTime") != null &&
+				qual.get("dateTime") instanceof Date)
+			dateTime = (Date) qual.get("dateTime");	
 		
-		String session_id = "NULL";
-		if (qual.containsField("session") && qual.get("session") != null)
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
+		
+		String session_id = null;
+		if (qual != null && qual.containsField("session") && qual.get("session") != null)
 			session_id = qual.get("session").toString();
 		
 		boolean wasSuccessful = true;
-		if (qual.containsField("wasSuccessful") && qual.get("wasSuccessful") != null)
+		if (qual != null && qual.containsField("wasSuccessful") && qual.get("wasSuccessful") != null
+				&& qual.get("getSuccessful") instanceof Boolean)
 			wasSuccessful = (boolean) qual.get("wasSuccessful");
 		
+		
 		DBObject response = null;
-		if (qual.containsField("response") && qual.get("response") != null)
+		if (qual != null && qual.containsField("response") && qual.get("response") != null &&
+				qual.get("response") instanceof DBObject)
 			response = (DBObject) qual.get("response");
+
 		
 		DBObject request = null;
-		if (qual.containsField("request") && qual.get("request") != null)
+		if (qual != null && qual.containsField("request") && qual.get("request") != null &&
+				qual.get("request") instanceof DBObject)
 			request = (DBObject) qual.get("request");
 		
+		DBObject standardized = null;
+	
+		boolean hasAddress = false;
+		if (response != null && response.containsField("standardized") && response.get("standardized") != null &&
+				response.get("standardized") instanceof DBObject)
+		{
+			//System.out.println(response.get("standardized").getClass());
+			standardized = (DBObject) response.get("standardized");
+		}
+		
+		
+		
+		int numberOfProducts = 0;
+		if (standardized != null && standardized.containsField("offers") && 
+				standardized.get("offers") != null && 
+				standardized.get("offers") instanceof ArrayList)
+			numberOfProducts = ((ArrayList<DBObject>) standardized.get("offers")).size(); 
+		
+		
 		ArrayList<String> providers1 = null;
-		if (response.containsField("providers") && response.get("providers") != null)
+		if (response != null && response.containsField("providers") && 
+				response.get("providers") != null &&
+				response.get("providers") instanceof ArrayList)
 			providers1 = (ArrayList<String>) response.get("providers");
 		
 		boolean isPositiveQual = true;
-		if (providers1.isEmpty())
+		if (providers1 != null && providers1.isEmpty())
 			isPositiveQual = false;
 		
-		DBObject address = null;
-		ArrayList<BasicDBObject> providers = null;
-		int numberOfProducts = 0;
 		
-		output.append("type", type);
-		output.append("id", qual_id);
-		output.append("dateTime", dateTime);
-		output.append("session", session_id);
-		output.append("wasSuccessful", wasSuccessful);
-		output.append("isPositiveQual", isPositiveQual);
+		
+		DBObject address = null;
+		
+		String address_city  = null;
+		String address_state = null;
+		String address_zip = null;
+		String address_suite = null;
+		String address_line = null;
+		
+		if (standardized != null && standardized.containsField("address") && 
+				standardized.get("address") != null && 
+				standardized.get("address") instanceof DBObject)
+		{
+			hasAddress = true;
+			address = (DBObject) standardized.get("address");
+			
+			if (address != null && address.containsField("city") && 
+					address.get("city") != null)
+				address_city = (String) address.get("city");
+			
+			if (address != null && address.containsField("state") && address.get("state") != null)
+				address_state = (String) address.get("state");
+			if (address != null && address.containsField("zip") && address.get("zip") != null)
+				address_zip = (String) address.get("zip");
+			if (address != null && address.containsField("suite") && address.get("suite") != null)
+				address_suite = (String) address.get("suite");
+			if (address != null && address.containsField("line") && address.get("line") != null)
+				address_line = (String) address.get("line");
+			
+		}
+		
+		
+		
+		if (!hasAddress && request != null && request.containsField("standardized") 
+				&& request.get("standardized") != null && 
+				request.get("standardized") instanceof DBObject)
+		{
+			standardized = (DBObject) request.get("standardized");
+		
+		if (standardized != null && standardized.containsField("zip") && 
+				standardized.get("zip") != null)
+			address_zip = (String) standardized.get("zip");
+		if (standardized != null && standardized.containsField("suite") &&
+				standardized.get("suite") != null)
+			address_suite = (String) standardized.get("suite");
+		if (standardized != null && standardized.containsField("line") && 
+				standardized.get("line") != null)
+			address_line = (String) standardized.get("line");
+		}
+	
+		
+		
+		
+		
+		output.append(type + '\001');
+		output.append(qual_id + '\001');
+		output.append(date_time + '\001');
+		output.append(session_id + '\001');
+		output.append(wasSuccessful);
+		output.append('\001');
+		output.append(isPositiveQual);
+		output.append('\001');
+		output.append(numberOfProducts);
+		output.append('\001');
+        output.append(address_city + '\001');
+        output.append(address_state + '\001');
+        output.append(address_zip + '\001');
+        output.append(address_suite + '\001');
+        output.append(address_line);
+
+
 		
 		return output;
 	}
 	
-	public static BasicDBObject processError(DBObject error)
+	public static StringBuilder processError(DBObject error)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
 		
 		String type = "ERROR";
-		if (error.containsField("type") && error.get("type") != null)
+		if (error != null && error.containsField("type") && 
+				error.get("type") != null)
 			type = (String) error.get("type");
 		
-		String error_id = "NULL";
-		if (error.containsField("_id") && error.get("_id") != null)
+		String error_id = null;
+		if (error != null && error.containsField("_id") && 
+				error.get("_id") != null)
 			error_id = error.get("_id").toString();
 		
-		String dateTime = "NULL";
-		if (error.containsField("dateTime") && error.get("dateTime") != null)
-			dateTime = error.get("dateTime").toString();
 		
-		String errorCode = "NULL";
-		if (error.containsField("errorCode") && error.get("errorCode") != null)
+		Date dateTime = null;
+		if (error != null && error.containsField("dateTime") && 
+				error.get("dateTime") != null &&
+				error.get("dateTime") instanceof Date)
+			dateTime = (Date) error.get("dateTime");	
+		
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
+	
+		
+		String errorCode = null;
+		if (error != null && error.containsField("errorCode") && 
+				error.get("errorCode") != null)
 			errorCode = (String) error.get("errorCode");
 		
-		String errorType = "NULL";
-		if (error.containsField("errorType") && error.get("errorType") != null)
+		String errorType = null;
+		if (error != null && error.containsField("errorType") && 
+				error.get("errorType") != null)
 			errorType = (String) error.get("errorType");
 		
-		String errorMessage = "NULL";
-		if (error.containsField("errorMessage") && error.get("errorMessage") != null)
+		String errorMessage = null;
+		if (error != null && error.containsField("errorMessage") && 
+				error.get("errorMessage") != null)
+		{
 			errorMessage = (String) error.get("errorMessage");
-		
-		String session_id = "NULL";
-		if (error.containsField("session") && error.get("session") != null)
+			if (errorMessage.contains("\n"))
+			{
+				String[] strArray = errorMessage.split("\n");
+				errorMessage = "";
+				for (String str : strArray)
+					errorMessage = errorMessage + '_' + str;
+			
+				
+			}
+		}
+		String session_id = null;
+		if (error != null && error.containsField("session") &&
+				error.get("session") != null)
 			session_id = error.get("session").toString();
 		
-		String providerCode = "NULL";
-		if (error.containsField("providerCode") && error.get("providerCode") != null)
+		String providerCode = null;
+		if (error != null && error.containsField("providerCode") && error.get("providerCode") != null)
 			providerCode = (String) error.get("providerCode");
 		
-		String providerName = "comcast";
+		String providerName = getProviderName(providerCode);
 		
-		String apicall = "NULL";
-		if (error.containsField("apicall") && error.get("apicall") != null)
-			apicall = (String) error.get("apicall");
+		String apicall_id = null;
+		if (error != null && error.containsField("apicall") && 
+				error.get("apicall") != null)
+			apicall_id = (String) error.get("apicall");
 		
-		int severity = rand.nextInt(5) + 1;
+		int severity = getSeverity(errorCode);
 		
-		output.append("type", type);
-		output.append("dateTime", dateTime);
-		output.append("id", error_id);
-		output.append("session", session_id);
-		output.append("errorType", errorType);
-		output.append("errorCode", errorCode);
-		output.append("errorMessage", errorMessage);
-		output.append("providerCode", providerCode);
-		output.append("providerName", providerName);
-		output.append("severity", severity);
-		output.append("apicall", apicall);
+		output.append(type + '\001');
+		output.append(date_time + '\001');
+		output.append(error_id + '\001');
+		output.append(session_id + '\001');
+		output.append(errorType + '\001');
+		output.append(errorCode + '\001');
+		output.append(errorMessage + '\001');
+		output.append(providerCode + '\001');
+		output.append(providerName + '\001');
+		output.append(severity);
+		output.append('\001');
+		output.append(apicall_id);
 		
 		
 		return output;
 	}
 	
-	public static BasicDBObject processOrder(DBObject order)
+	public static StringBuilder processOrder(DBObject order)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
 		
 		String type = "ORDER";
-		if (order.containsField("type") && order.get("type") != null)
+		if (order != null && order.containsField("type") && 
+				order.get("type") != null)
 			type = (String) order.get("type");
 		
-		String dateTime = "NULL";
-		if (order.containsField("dateTime") && order.get("dateTime") != null)
-			dateTime = order.get("dateTime").toString();
 		
-		String order_id = "NULL";
-		if (order.containsField("_id") && order.get("_id") != null)
+		Date dateTime = null;
+		if (order != null && order.containsField("dateTime") && 
+				order.get("dateTime") != null &&
+				order.get("dateTime") instanceof Date)
+			dateTime = (Date) order.get("dateTime");	
+		
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
+		
+		String order_id = null;
+		if (order != null && order.containsField("_id") && 
+				order.get("_id") != null)
 			order_id = order.get("_id").toString();
 		
-		String qual_id = "NULL";
-		if (order.containsField("qual") && order.get("qual") != null)
+		String qual_id = null;
+		if (order != null && order.containsField("qual") && 
+				order.get("qual") != null)
 			qual_id = order.get("qual").toString();
 		
-		String session_id= "NULL";
-		if (order.containsField("session") && order.get("session") != null)
+		String session_id= null;
+		if (order != null && order.containsField("session") && 
+				order.get("session") != null)
 			session_id = order.get("session").toString();
 		
 		
-		String providerId = "NULL";
-		if (order.containsField("providerId") && order.get("providerId") != null)
+		String providerId = null;
+		if (order != null && order.containsField("providerId") &&
+				order.get("providerId") != null)
 			providerId = (String) order.get("providerId");
 		
-		String providerCode = "NULL";
-		if (order.containsField("providerCode") && order.get("providerCode") != null)
+		String providerCode = null;
+		if (order != null && order.containsField("providerCode") &&
+				order.get("providerCode") != null)
 			providerCode = (String) order.get("providerCode");
 		
-		String providerName = "comcast";
+		String providerName = getProviderName(providerCode);
 		
-		String trackingId = "NULL";
-		if (order.containsField("trackingId") && order.get("trackingId") != null)
+		String trackingId = null;
+		if (order != null && order.containsField("trackingId") && 
+				order.get("trackingId") != null)
 			trackingId = (String) order.get("trackingId");
 		
-		ArrayList<DBObject> confirmations = null;
-		if (order.containsField("confirmations") && order.get("confirmations") != null)
-			confirmations = (ArrayList<DBObject>) order.get("confirmations");
-		String orderConfirmationId = "NULL";
-		if (confirmations != null && !confirmations.isEmpty())
-			if (confirmations.get(0).containsField("orderConfirmationId") && 
-					confirmations.get(0).get("orderConfirmationId") != null )
-				orderConfirmationId = (String) confirmations.get(0).get("orderConfirmationId"); 
+		String API = "CPOS";
+		if (trackingId != null)
+			API = "G2B";
 		
-		ArrayList<DBObject> products = null;
-		ArrayList<DBObject> products1 = new ArrayList<DBObject>();
-		if (order.containsField("products") && order.get("products") != null)
+		ArrayList<DBObject> confirmations = null;
+		if (order != null && order.containsField("confirmations") && 
+				order.get("confirmations") != null &&
+				order.get("confirmations") instanceof ArrayList)
+			confirmations = (ArrayList<DBObject>) order.get("confirmations");
+		StringBuilder orderConfirmationIds = new StringBuilder();
+		if (confirmations != null && !confirmations.isEmpty())
+		{
+			for (DBObject confirmation : confirmations)
+			{
+				if (confirmation.containsField("orderConfirmationId") &&
+						confirmation.get("orderConfirmationId") != null)
+					orderConfirmationIds.append(confirmation.get("orderConfirmationId").toString() 
+							+ '_');
+			}
+			if (orderConfirmationIds.length() > 0)
+				orderConfirmationIds.deleteCharAt(orderConfirmationIds.length() - 1);
+		}
+		
+		
+		
+		ArrayList<DBObject> products = new ArrayList<DBObject>();
+		if (order != null && order.containsField("products") && order.get("products") != null && 
+				order.get("products") instanceof ArrayList)
 			products = (ArrayList<DBObject>) order.get("products");
 		
 		if (products != null && !products.isEmpty())
@@ -1006,31 +1428,60 @@ public class MongodbSynchronization {
 			while (it.hasNext())
 			{
 				DBObject product = (DBObject) it.next();
-				BasicDBObject product1 = new BasicDBObject();
-				String term = "NULL";
+				StringBuilder product1 = new StringBuilder();
+				
+				
+				product1.append(type + '\001');
+				product1.append(date_time + '\001');
+				product1.append(order_id + '\001');
+				product1.append(qual_id + '\001');
+				product1.append(session_id + '\001');
+				product1.append(providerId + '\001');
+				product1.append(providerCode + '\001');
+				product1.append(providerName + '\001');
+				product1.append(trackingId + '\001');
+				product1.append(API + '\001');
+				product1.append(orderConfirmationIds.toString() + '\001');
+				
+				
+				String term = null;
 				String voiceServiceExtension = "false";
 				String videoServiceExtension = "false";
 				String dataServiceExtension = "false";
-				String price = "NULL";
-				String description = "NULL";
+				String price = null;
+				String description = null;
+				StringBuilder lineItemDescription = new StringBuilder();
 				
 				if (product.containsField("voiceServiceExtension") && 
-						product.get("voiceServiceExtension") != null)
+						product.get("voiceServiceExtension") != null &&
+						product.get("voiceServiceExtension") instanceof String)
 					voiceServiceExtension = (String) product.get("voiceServiceExtension");
 				
 				if (product.containsField("videoServiceExtension") && 
-						product.get("videoServiceExtension") != null)
+						product.get("videoServiceExtension") != null && 
+						product.get("videoServiceExtension") instanceof String)
 					videoServiceExtension = (String) product.get("videoServiceExtension");
 				
 				if (product.containsField("dataServiceExtension") && 
-						product.get("dataServiceExtension") != null)
+						product.get("dataServiceExtension") != null &&
+						product.get("dataServiceExtension") instanceof String)
 					dataServiceExtension = (String) product.get("dataServiceExtension");
+				if (voiceServiceExtension.equalsIgnoreCase("true"))
+					lineItemDescription.append("Voice");
+				if (videoServiceExtension.equalsIgnoreCase("true"))
+					lineItemDescription.append("Video");
+				if (dataServiceExtension.equalsIgnoreCase("true"))
+					lineItemDescription.append("Data");
 				
-				if (product.containsField("price") && product.get("price") != null)
+				
+				
+				if (product.containsField("price") && product.get("price") != null &&
+						product.get("price") instanceof DBObject)
 				{
 					DBObject price1 = null;
 					price1 = (DBObject) product.get("price");
-					if (price1.containsField("promo") && price1.get("promo") != null)
+					if (price1.containsField("promo") && price1.get("promo") != null && 
+							price1.get("promo") instanceof DBObject)
 					{
 						DBObject promo = null;
 						promo = (DBObject) price1.get("promo");
@@ -1039,132 +1490,297 @@ public class MongodbSynchronization {
 						if (promo.containsField("term") && promo.get("term") != null)
 							term = promo.get("term").toString();
 						if (promo.containsField("description") && promo.get("description") != null)
+						{
 							description = promo.get("description").toString();
-						
+							description.replace('\n', '.');
+							if (description.contains("\n"))
+							{
+								String[] strArray = description.split("\n");
+								description = "";
+								for (String str : strArray)
+									description = description + "_" + str;
+							}
+						}
 					}
 				}
 				
-				String lineItemCount = "NULL";
+				String lineItemCount = null;
 				if (product.containsField("lineItemCount") && product.get("lineItemCount") != null)
 					lineItemCount = (String) product.get("lineItemCount");
 		
-				String verticalCode = "NULL";
+				String verticalCode = null;
 				if (product.containsField("verticalCode") && product.get("verticalCode") != null)
 					verticalCode = (String) product.get("verticalCode");
+				
 		
-				product1.append("voiceServiceExtension", voiceServiceExtension);
-				product1.append("videoServiceExtension", videoServiceExtension);
-				product1.append("dataServiceExtension", dataServiceExtension);
-				product1.append("price", price);
-				product1.append("term", term);
-				product1.append("description", description);
-				product1.append("vertivalCode", verticalCode);
-				product1.append("lineItemCount", lineItemCount);
-				products1.add(product1);
+				//System.out.print("VoiceServiceExtension " + voiceServiceExtension);
+				//System.out.print(" VideoServiceExtension " + videoServiceExtension);
+				//System.out.println(" dataServiceExtension " + dataServiceExtension + "\n");
+
+
+				product1.append(lineItemDescription.toString() + '\001');
+				product1.append(price + '\001');
+				product1.append(term + '\001');
+				product1.append(description + '\001');
+				product1.append(verticalCode + '\001');
+				product1.append(lineItemCount + '\n');
+				output.append(product1);
 		
 				
 			}
+			if (output.length() > 0)
+				output.deleteCharAt(output.length() - 1);
+			
 		}
 	
-		output.append("type", type);
-		output.append("dateTime", dateTime);
-		output.append("id", order_id);
-		output.append("qual", qual_id);
-		output.append("session", session_id);
-		output.append("providerId", providerId);
-		output.append("providerCode", providerCode);
-		output.append("providerName", providerName);
-		output.append("trackingId", trackingId);
-		output.append("orderConfirmationId", orderConfirmationId);
-		output.append("products", products1);
+		/*output.append(type + '\001');
+		output.append(date_time + '\001');
+		output.append(order_id + '\001');
+		output.append(qual_id + '\001');
+		output.append(session_id + '\001');
+		output.append(providerId + '\001');
+		output.append(providerCode + '\001');
+		output.append(providerName + '\001');
+		output.append(trackingId + '\001');
+		output.append(orderConfirmationIds.toString() + '\001');
+		output.append(products1.toString());*/
 		
 		
 		return output;
 		
 	}
 	
-	public static BasicDBObject processLead(DBObject lead)
+	public static StringBuilder processLead(DBObject lead)
 	{
-		BasicDBObject output = new BasicDBObject();
+		StringBuilder output = new StringBuilder();
 		
-	    String dateTime = "NULL";
-	    if (lead.containsField("dateTime") && lead.get("dateTime") != null)
-	    	dateTime = lead.get("dateTime").toString();
+	    
+	    Date dateTime = null;
+		if (lead != null && lead.containsField("dateTime") && 
+				lead.get("dateTime") != null &&
+				lead.get("dateTime") instanceof Date)
+			dateTime = (Date) lead.get("dateTime");	
+		
+		String date_time = null;
+		if (dateTime != null)
+		{
+			//dateTime.setHours(dateTime.getHours() - 8);
+			date_time = formatter.format(dateTime);
+			//System.out.println(dateTime.toString());
+			//System.out.println(date_time + '\n');
+		}
+	
 		
 	    String type = "LEAD";
-	    if (lead.containsField("type") && lead.get("type") != null)
+	    if (lead != null && lead.containsField("type") && 
+	    		lead.get("type") != null)
 	    	type = (String) lead.get("type");
 	    
 
-	    String lead_id = "NULL";
-	    if (lead.containsField("_id") && lead.get("_id") != null)
+	    String lead_id = null;
+	    if (lead != null && lead.containsField("_id") && lead.get("_id") != null)
 	    	lead_id = lead.get("_id").toString();
 
-	    ArrayList<String> sessions = new ArrayList<String>();	   
-	    if (lead.containsField("sessions") && lead.get("sessions") != null)
+	    StringBuilder sessions = new StringBuilder();	   
+	    if (lead != null && lead.containsField("sessions") && lead.get("sessions") != null &&
+	    		lead.get("sessions") instanceof ArrayList)
 	    {
 	    	 ArrayList<ObjectId> sessions1 = null;
 	    	sessions1 = (ArrayList<ObjectId>) lead.get("sessions");
 	    	if (!sessions1.isEmpty())
 	    	{
 	    		for (ObjectId session : sessions1)
-	    			sessions.add(session.toString());
+	    			sessions.append(session.toString() + '\002');
+	    		sessions.deleteCharAt(sessions.length() - 1);
 	    	}
 	    }
 	    
-	    ArrayList<String> visits = new ArrayList<String>();	   
-	    if (lead.containsField("visits") && lead.get("visits") != null)
+	    StringBuilder visits = new StringBuilder();	   
+	    if (lead != null && lead.containsField("visits") && lead.get("visits") != null &&
+	    		lead.get("visits") instanceof ArrayList)
 	    {
 	    	 ArrayList<ObjectId> visits1 = null;
 	    	 visits1 = (ArrayList<ObjectId>) lead.get("visits");
 	    	if (!visits1.isEmpty())
 	    	{
 	    		for (ObjectId visit : visits1)
-	    			visits.add(visit.toString());
+	    			visits.append(visit.toString() + '\002');
+	    		visits.deleteCharAt(visits.length() - 1);
 	    	}
 	    }
 	    
 	    
 
 	    DBObject address = new BasicDBObject();
-	    if (lead.containsField("address") && lead.get("address") != null)
+	    if (lead != null && lead.containsField("address") && lead.get("address") != null &&
+	    		lead.get("address") instanceof DBObject)
 	    	address = (DBObject) lead.get("address");
+	    String address_city = null;
+	    String address_line = null;
+	    String address_state = null;
+	    String address_suite = null;
+	    String address_zip = null;
+	    
+	    if (address.containsField("city") && address.get("city") != null)
+	    	address_city = (String) address.get("city");
+	    
+	    if (address.containsField("line") && address.get("line") != null)
+	    	address_line = (String) address.get("line");
+	    if (address.containsField("state") && address.get("state") != null)
+	    	address_state = (String) address.get("state");
+	    if (address.containsField("suite") && address.get("suite") != null)
+	    	address_suite = (String) address.get("suite");
+	    if (address.containsField("zip") && address.get("zip") != null)
+	    	address_zip = (String) address.get("zip");
+
+	    
 	    
 
-	    String leadSource = "NULL";
-	    if (lead.containsField("leadSource") && lead.get("leadSource") != null)
+	    String leadSource = null;
+	    if (lead != null && lead.containsField("leadSource") && 
+	    		lead.get("leadSource") != null)
 	    	leadSource = (String) lead.get("leadSource");
 	    
-	    String leadSourceName = "NULL";
+	    String leadSourceName = getLeadSourceName(leadSource);
 
-	    String providerPhone = "NULL";
-	    if (lead.containsField("providerPhone") && lead.get("providerPhone") != null)
+	    String providerPhone = null;
+	    if (lead != null && lead.containsField("providerPhone") &&
+	    		lead.get("providerPhone") != null)
 	    	providerPhone = (String) lead.get("providerPhone");
 	   
-	    String providerCode = "NULL";
-	    if (lead.containsField("providerCode") && lead.get("providerCode") != null)
+	    String providerCode = null;
+	    if (lead != null && lead.containsField("providerCode") && 
+	    		lead.get("providerCode") != null)
 	    	providerCode = (String) lead.get("providerCode");
 	    
 
 	    DBObject semTracking = new BasicDBObject();
-	    if (lead.containsField("semTracking") && lead.get("semTracking") != null)
+	    if (lead != null && lead.containsField("semTracking") && 
+	    		lead.get("semTracking") != null &&
+	    		lead.get("semTracking") instanceof DBObject)
 	    	semTracking = (DBObject) lead.get("semTracking");
 	    
+		String semTracking_inboundQueryString = null;
+		String semTracking_adId = null;
+		String semTracking_naturalTerms = null;
+		String semTracking_searchEngine = null;
+		String semTracking_naturalSearchId = null;
+		String semTracking_searchId = null;
+		String semTracking_referrer = null;
+		String semTracking_adGroup = null;
+		String semTracking_campaign = null;
+		String semTracking_terms = null;
+		
+		if (semTracking.containsField("inboundQueryString") && 
+				semTracking.get("inboundQueryString") != null)
+			semTracking_inboundQueryString = (String) semTracking.get("inboundQueryString");
+		
+		if (semTracking.containsField("adId") && semTracking.get("adId") != null)
+			semTracking_adId = (String) semTracking.get("adId");
+		
+		if (semTracking.containsField("naturalTerms") && semTracking.get("naturalTerms") != null)
+			semTracking_naturalTerms = (String) semTracking.get("naturalTerms");
+		
+		if (semTracking.containsField("searchEngine") && semTracking.get("searchEngine") != null)
+			semTracking_searchEngine = (String) semTracking.get("searchEngine");
+		
+		if (semTracking.containsField("naturalSearchId") && semTracking.get("naturalSearchId") != null)
+			semTracking_naturalSearchId = (String) semTracking.get("naturalSearchId");
+		
+		if (semTracking.containsField("searchId") && semTracking.get("searchId") != null)
+			semTracking_searchId = (String) semTracking.get("searchId");
+		
+		if (semTracking.containsField("referrer") && semTracking.get("referrer") != null)
+			semTracking_referrer = (String) semTracking.get("referrer");
+		
+		if (semTracking.containsField("adGroup") && semTracking.get("adGroup") != null)
+			semTracking_adGroup = (String) semTracking.get("adGroup");
+		
+		if (semTracking.containsField("campaign") && semTracking.get("campaign") != null)
+			semTracking_campaign = (String) semTracking.get("campaign");
 		
 		
+		if (semTracking.containsField("terms") && semTracking.get("terms") != null)
+			semTracking_terms = (String) semTracking.get("terms");
 		
 		
-		output.append("type", type);
-		output.append("id", lead_id);
-		output.append("dateTime", dateTime);
-		output.append("sessions", sessions);
-		output.append("visits", visits);
-		output.append("address", address);
-		output.append("leadSource", leadSource);
-		output.append("leadSourceName", leadSourceName);
-		output.append("providerPhone", providerPhone);
-		output.append("providerCode", providerCode);
-		output.append("semTracking", semTracking);
+		output.append(type + '\001');
+		output.append(lead_id + '\001');
+		output.append(date_time + '\001');
+		output.append(sessions.toString() + '\001');
+		output.append(visits.toString() + '\001');
+
+		output.append(address_city + '\001');
+		output.append(address_line + '\001');
+		output.append(address_state + '\001');
+		output.append(address_suite + '\001');
+		output.append(address_zip + '\001');
+
+		output.append(leadSource+ '\001');
+		output.append(leadSourceName + '\001');
+		output.append(providerPhone + '\001');
+		output.append(providerCode + '\001');
+		
+		output.append(semTracking_inboundQueryString + '\001');
+		output.append(semTracking_adId + '\001');
+		output.append(semTracking_naturalTerms + '\001');
+		output.append(semTracking_searchEngine + '\001');
+		output.append(semTracking_naturalSearchId + '\001');
+		output.append(semTracking_searchId + '\001');
+		output.append(semTracking_referrer + '\001');
+		output.append(semTracking_adGroup + '\001');
+		output.append(semTracking_campaign + '\001');
+		output.append(semTracking_terms);
+		
+		
+		return output;
+	}
+	
+	public static StringBuilder processVisit(DBObject visit)
+	{
+		StringBuilder output = new StringBuilder();
+		
+		 Date dateTime = null;
+			if (visit != null && visit.containsField("dateTime") && 
+					visit.get("dateTime") != null &&
+					visit.get("dateTime") instanceof Date)
+				dateTime = (Date) visit.get("dateTime");	
+			
+			String date_time = null;
+			if (dateTime != null)
+			{
+				//dateTime.setHours(dateTime.getHours() - 8);
+				date_time = formatter.format(dateTime);
+				//System.out.println(dateTime.toString());
+				//System.out.println(date_time + '\n');
+			}
+		
+			
+		    String type = "VISIT";
+		    if (visit != null && visit.containsField("type") && 
+		    		visit.get("type") != null)
+		    	type = (String) visit.get("type");
+		    
+
+		    String visit_id = null;
+		    if (visit != null && visit.containsField("_id") && visit.get("_id") != null)
+		    	visit_id = visit.get("_id").toString();
+		    
+		    String lead_id = null;
+		    if (visit != null && visit.containsField("lead") && visit.get("lead") != null)
+		    	lead_id = visit.get("lead").toString();
+		    
+		    String session_id = null;
+		    if (visit != null && visit.containsField("session") && visit.get("session") != null)
+		    	visit_id = visit.get("session").toString();
+
+
+		    output.append(type + '\001');
+		    output.append(visit_id + '\001');
+		    output.append(date_time + '\001');
+		    output.append(lead_id + '\001');
+		    output.append(session_id);
+			
 		
 		
 		
@@ -1173,10 +1789,10 @@ public class MongodbSynchronization {
 	
 	public static BasicDBObject parseUserAgent(String userAgentString) 
 	{
-		String osName = "NULL";
-		String browserName = "NULL";
-		String deviceTypeName = "NULL";
-		String mobileDevice = "NULL";
+		String osName = null;
+		String browserName = null;
+		String deviceTypeName = null;
+		String mobileDevice = null;
 		BasicDBObject outputKey = new BasicDBObject();
 		
 		if (userAgentString != null) 
@@ -1244,16 +1860,265 @@ public class MongodbSynchronization {
         return outputKey;
 		
 	}
+	public static String getProviderName(String providerCode)
+	{
+		String providerName = null;
+		
+		if (providerCode != null && providerCode.equalsIgnoreCase("pro53"))
+			providerName = "comcast";
+	    return providerName;
+	}
+	public static String getLeadSourceName(String leadSource)
+	{
+		String leadSourceName = null;
+		
+		
+		return leadSourceName;
+	}
+	public static int getSeverity(String errorCode)
+	{
+		int severity;
+	    severity = 0;
+	    String key = null;
+	    if (errorCode != null)
+	    {
+	    	key = errorCode;
+	    	if (errorCodes.containsKey(key))
+	    		severity = Integer.valueOf(errorCodes.get(key)).intValue();
+	    }
+		
+		
+		return severity;
+		
+		
+		
+	}
+	
+	public static Date buildDate(String dateString )
+	{
+		Date date = null;
+		
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+		
+		try {
+			date = formatter.parse(dateString);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			System.out.println("exception on SimpleDateFormat parse date string");
+		}
+		
+		return date;
+	}
+	public static void prepareFiles()
+	{
+		
+		try {
 
+			
+			 sessionsFile = new File(filePrefix +  "_sesssion.tmp");
+		    leadsFile = new File(filePrefix + "_leads.tmp");
+			ordersFile = new File(filePrefix + "_orders.tmp");
+			apiCallsFile = new File(filePrefix + "_apiCalls.tmp");
+			 errorsFile = new File(filePrefix + "_errors.tmp");
+		    qualsFile = new File(filePrefix + "_quals.tmp");
+			customersFile = new File(filePrefix + "_customers.tmp");
+			visitsFile = new File(filePrefix + "_visits.tmp");
+			
+			
+			if (!sessionsFile.exists())
+				sessionsFile.createNewFile();
+			
+			if (!leadsFile.exists())
+				leadsFile.createNewFile();
+		
+			if (!ordersFile.exists())
+				ordersFile.createNewFile();
+		
+			if (!apiCallsFile.exists())
+				apiCallsFile.createNewFile();
+		
+			if (!errorsFile.exists())
+				errorsFile.createNewFile();
+		
+			if (!qualsFile.exists())
+				qualsFile.createNewFile();
+		
+			if (!customersFile.exists())
+				customersFile.createNewFile();
+			
+			if (!visitsFile.exists())
+				visitsFile.createNewFile();
+			
+		
+		sessionsOutput = new BufferedWriter(new FileWriter(sessionsFile));
+		leadsOutput = new BufferedWriter(new FileWriter(leadsFile));
+		ordersOutput = new BufferedWriter(new FileWriter(ordersFile));
+		apiCallsOutput = new BufferedWriter(new FileWriter(apiCallsFile));
+		errorsOutput = new BufferedWriter(new FileWriter(errorsFile));
+		qualsOutput = new BufferedWriter(new FileWriter(qualsFile));
+		customersOutput = new BufferedWriter(new FileWriter(customersFile));
+		visitsOutput = new BufferedWriter(new FileWriter(visitsFile));
+		
+		
+		
+		
+		} catch (Exception e) {
+			System.out.println("file not found");
+		}
+
+
+	}
+	public static void finishFiles()
+	{
+		sessionsFile.renameTo(new File(filePrefix + "_sessions.new"));
+		leadsFile.renameTo(new File(filePrefix + "_leads.new"));
+		ordersFile.renameTo(new File(filePrefix + "_orders.new"));
+		apiCallsFile.renameTo(new File(filePrefix + "_apiCalls.new"));
+		errorsFile.renameTo(new File(filePrefix + "_errors.new"));
+		qualsFile.renameTo(new File(filePrefix + "_quals.new"));
+		customersFile.renameTo(new File(filePrefix + "_customers.new"));
+		visitsFile.renameTo(new File(filePrefix + "_visits.new"));
+		
+		
+	}
+	public static String getDateString(Date date)
+	{
+	
+		SimpleDateFormat formatter = new SimpleDateFormat("YYYY'y'MM'm'dd'd'HH'h'mm'm'ss's'");
+		
+
+		
+		
+		
+		return formatter.format(date);
+	}
+	public static void getErrorCodes()
+	{
+		//DBCursor result = errorCodesColl.find(query);
+		DBCursor result = errorCodesColl.find();
+		DBObject errorCodeObject;
+		String errorCodeStr = null, severity = null, API_call = null;
+		errorCodes = new HashMap<String, String>();
+				
+				try {
+					int count = 0;
+					while (result.hasNext())
+					{
+						count++;
+						errorCodeObject = result.next();
+						if (errorCodeObject != null && errorCodeObject.containsField("ErrorCd") && 
+								errorCodeObject.get("ErrorCd") != null)
+							 errorCodeStr = (String) errorCodeObject.get("ErrorCd");
+						
+						if (errorCodeObject != null && errorCodeObject.containsField("Severity") && 
+								errorCodeObject.get("Severity") != null)
+							 severity = String.valueOf((int) errorCodeObject.get("Severity"));
+						if (errorCodeObject != null && errorCodeObject.containsField("API Call") && 
+								errorCodeObject.get("API Call") != null)
+							API_call = (String) errorCodeObject.get("API Call");
+						
+						
+						//System.out.println(errorCodeStr + " = " + severity);
+						//System.out.println(errorCodeObject.toString());
+						errorCodes.put(errorCodeStr, severity);
+							
+						
+					}
+					//System.out.println(count);
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					result.close();
+				}
+			
+	}
+	
+	public static void prepareDate()
+	{
+		String regex = "(20[0-9]{2}-[0-1][0-9]-[0-3][0-9]_[0-2][0-9]:[0-5][0-9]:[0-5][0-9])";
+		
+		if ( startString == null || endString == null ||
+				!(Pattern.matches(regex, startString) && Pattern.matches(regex, endString)))
+		{
+			System.out.println("Start time string or end time string is not right!");
+			System.out.println("Please comform to this format yyyy-MM-dd HH:mm:ss!");
+			System.out.println("An example is 2013-11-21_13:23:00");
+			System.exit(0);
+		}
+		
+		start = buildDate(startString);
+		end = buildDate(endString);
+		startString = getDateString(start);
+		endString = getDateString(end);
+		
+		BasicDBObject condition = new BasicDBObject("$gte", start);
+		condition.append("$lt", end);
+		query = new BasicDBObject("dateTime", condition);
+		
+		fileName = startString + '_' + endString;
+		//fileName = "";
+		filePrefix = outputFileDest + fileName;
+		formatter = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+		
+	
+		
+	}
+	
 	public static void main(String[] args)
 	{
+		String propPath = null;
+		if (args.length == 2)
+		{
+			startString = args[0];
+			endString = args[1];
+			propPath = "/home/zengmingyu/scripts/testprop.properties";
+			
+		} else if (args.length == 3)
+		{
+			startString = args[0];
+			endString = args[1];
+			propPath = args[2];
+		 
+		} else {
+			System.out.println("please at least set start time and end endTime");
+			System.exit(0);
+		}
+		//startString = "2013-09-04_04:00:00";
+	    //endString = "2013-09-04_07:00:00";
+		
+		 //String propPath = "/home/zengmingyu/scripts/testprop.properties";
+		
+		
+		//System.out.println(buildDate(startString).toString());
+		//System.out.println(buildDate(endString).toString());
+		
+	    prepareConnections(propPath);
+		prepareDate();
+		getErrorCodes();
+		prepareFiles();
 		getFromSessions();
 		getFromCustomers();
 		getFromApiCalls();
 		getFromQuals();
 		getFromErrors();
-		getFromOrders();
+	    getFromOrders();
 		getFromLeads();
+		getFromVisits();
+		finishFiles();
 		
-	}
+		
+		
+		
+		}
 }
+
+
+
+
+
+
+
+
+
