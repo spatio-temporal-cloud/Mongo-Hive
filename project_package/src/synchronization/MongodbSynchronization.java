@@ -65,7 +65,7 @@ public class MongodbSynchronization {
 	public static void prepareConnections(String propPath) {
 		
 		if (propPath == null)
-			propPath = "/home/zengmingyu/scripts/testprop.properties";
+		propPath = "/home/zengmingyu/scripts/testprop.properties";
 		
 		String mongodbServerIP = null;
 		int port = -1;
@@ -559,8 +559,11 @@ public class MongodbSynchronization {
 					apiCalls.append(apiCall.toString() + '\002');
 				apiCalls.deleteCharAt(apiCalls.length() - 1);
 			}
+//			add else block on 30th,DEC,2013
+			else
+				apiCalls.append("\\N");
 		}
-		
+
 		
 		Date dateTime = null;
 		if (session != null && session.containsField("dateTime") && 
@@ -585,19 +588,31 @@ public class MongodbSynchronization {
 		if (session != null && session.containsField("_id") && 
 				session.get("_id") != null)
 			session_id = session.get("_id").toString();
+//		add else block on 30th,DEC,2013
+		else 
+			session_id="\\N";
 		
 		String lead_id = null;
 		if (session != null && session.containsField("lead") && 
 				session.get("lead") != null)
 			lead_id = session.get("lead").toString();
+//		add else block on 30th,DEC,2013
+		else
+			lead_id="\\N";
 
 		String visit_id = null;
 		if (session != null && session.containsField("visit") && session.get("visit") != null)
 			visit_id = session.get("visit").toString();
+//		add else block on 30th,DEC,2013
+		else 
+			visit_id="\\N";
 		
 		String order_id = null;
 		if (session != null && session.containsField("order") && session.get("order") != null)
 			order_id = session.get("order").toString();
+//		add else block on 30th,DEC,2013
+		else
+			order_id="\\N";
 		
 		boolean ordered = false;
 		if (order_id != null)
@@ -615,6 +630,9 @@ public class MongodbSynchronization {
 					quals.append(qual.toString() + '\002');
 				quals.deleteCharAt(quals.length() - 1);
 			}
+//			add else block on 30th,DEC,2013
+			else
+				quals.append("\\N");
 		}
 		
 		StringBuilder errs  = new StringBuilder();
@@ -628,6 +646,9 @@ public class MongodbSynchronization {
 					errs.append(err.toString() + '\002');
 				errs.deleteCharAt(errs.length() - 1);
 			}
+//			add else block on 30th,DEC,2013
+			else
+				errs.append("\\N");
 		}
 	
 		
@@ -714,6 +735,9 @@ public class MongodbSynchronization {
 		if (customer != null && customer.containsField("_id") && 
 				customer.get("_id") != null)
 			customer_id = customer.get("_id").toString();
+//		add else block on 30th,DEC
+		else 
+			customer_id="\\N";
 		
 		String firstName = null;
 		if (customer != null && customer.containsField("firstName") && 
@@ -726,7 +750,7 @@ public class MongodbSynchronization {
 			lastName = (String) customer.get("lastName");
 		
 		StringBuilder customerName = new StringBuilder();
-		customerName.append(firstName + "_" + lastName);
+		customerName.append(firstName + " " + lastName);
 		
 		String email = null;
 		if (customer != null && customer.containsField("email") && 
@@ -750,6 +774,9 @@ public class MongodbSynchronization {
 					leads.append(lead.toString() + '\002');
 				leads.deleteCharAt(leads.length() - 1);
 			}
+//			add else block on 30th,DEC,2013
+			else
+				leads.append("\\N");
 		}
 		
 		
@@ -824,11 +851,17 @@ public class MongodbSynchronization {
 		if (apiCall != null && apiCall.containsField("_id") && 
 				apiCall.get("_id") != null)
 			apiCall_id = apiCall.get("_id").toString();
+//		add else block on 30th,DEC
+		else
+			apiCall_id="\\N";
 		
 		String session_id = null;
 		if (apiCall != null && apiCall.containsField("session") &&
 				apiCall.get("session") != null)
 			session_id =  apiCall.get("session").toString();
+//		add else block on 30th,DEC
+		else
+			session_id="\\N";
 		
 		Boolean isError = false;
 		if (apiCall != null && apiCall.containsField("isError") &&
@@ -1042,7 +1075,9 @@ public class MongodbSynchronization {
 		String qual_id = null;
 		if (apiCall != null && apiCall.containsField("qual") && apiCall.get("qual") != null)
 			qual_id = (String) apiCall.get("qual");
-		
+//		add else block on 30th,DEC,2013
+		else
+			qual_id="\\N";
 		
 		output.append(type + '\001');
 		output.append(date_time + '\001');
@@ -1102,6 +1137,10 @@ public class MongodbSynchronization {
 		String qual_id= null;
 		if (qual != null && qual.containsField("_id") && qual.get("_id") != null)
 			qual_id = qual.get("_id").toString();
+//		add else block on 30th,DEC,2013
+		else
+			qual_id="\\N";
+		
 		
 		//System.out.println("qual_id = " + qual_id);
 		Date dateTime = null;
@@ -1122,6 +1161,9 @@ public class MongodbSynchronization {
 		String session_id = null;
 		if (qual != null && qual.containsField("session") && qual.get("session") != null)
 			session_id = qual.get("session").toString();
+//		add else block on 30th,DEC,2013
+		else
+			session_id="\\N";
 		
 		Boolean wasSuccessful = true;
 		if (qual != null && qual.containsField("wasSuccessful") && qual.get("wasSuccessful") != null
@@ -1258,6 +1300,9 @@ public class MongodbSynchronization {
 		if (error != null && error.containsField("_id") && 
 				error.get("_id") != null)
 			error_id = error.get("_id").toString();
+//		add else block on 30th,DEC,2013
+		else
+			error_id="\\N";
 		
 		
 		Date dateTime = null;
@@ -1306,6 +1351,9 @@ public class MongodbSynchronization {
 		if (error != null && error.containsField("session") &&
 				error.get("session") != null)
 			session_id = error.get("session").toString();
+//		add else block on 30th,DEC,2013
+		else
+			session_id="\\N";
 		
 		String providerCode = null;
 		if (error != null && error.containsField("providerCode") && error.get("providerCode") != null)
@@ -1317,6 +1365,9 @@ public class MongodbSynchronization {
 		if (error != null && error.containsField("apicall") && 
 				error.get("apicall") != null)
 			apicall_id = (String) error.get("apicall");
+//		add else block on 30th,DEC,2013
+		else
+			apicall_id="\\N";
 		
 		int severity = getSeverity(errorCode);
 		
@@ -1367,16 +1418,25 @@ public class MongodbSynchronization {
 		if (order != null && order.containsField("_id") && 
 				order.get("_id") != null)
 			order_id = order.get("_id").toString();
+//		add else block on 30th,DEC,2013
+		else
+			order_id="\\N";
 		
 		String qual_id = null;
 		if (order != null && order.containsField("qual") && 
 				order.get("qual") != null)
 			qual_id = order.get("qual").toString();
+//		add else block on 30th,DEC,2013
+		else
+			qual_id="\\N";
 		
 		String session_id= null;
 		if (order != null && order.containsField("session") && 
 				order.get("session") != null)
 			session_id = order.get("session").toString();
+//		add else block on 30th,DEC,2013
+		else
+			session_id="\\N";
 		
 		
 		String providerId = null;
@@ -1396,9 +1456,11 @@ public class MongodbSynchronization {
 				order.get("trackingId") != null)
 			trackingId = (String) order.get("trackingId");
 		
-		String API = "CPOS";
-		if (trackingId != null)
-			API = "G2B";
+		String API =null;
+		if(trackingId==null||trackingId.equalsIgnoreCase("null"))
+			API="CPOS";
+	    else
+	    	API="G2B";
 		
 		ArrayList<DBObject> confirmations = null;
 		if (order != null && order.containsField("confirmations") && 
@@ -1590,6 +1652,9 @@ public class MongodbSynchronization {
 	    String lead_id = null;
 	    if (lead != null && lead.containsField("_id") && lead.get("_id") != null)
 	    	lead_id = lead.get("_id").toString();
+//		add else block on 30th,DEC,2013
+		else
+			lead_id="\\N";
 
 	    StringBuilder sessions = new StringBuilder();	   
 	    if (lead != null && lead.containsField("sessions") && lead.get("sessions") != null &&
@@ -1603,6 +1668,9 @@ public class MongodbSynchronization {
 	    			sessions.append(session.toString() + '\002');
 	    		sessions.deleteCharAt(sessions.length() - 1);
 	    	}
+//			add else block on 30th,DEC,2013
+			else
+				sessions.append("\\N");
 	    }
 	    
 	    StringBuilder visits = new StringBuilder();	   
@@ -1617,10 +1685,13 @@ public class MongodbSynchronization {
 	    			visits.append(visit.toString() + '\002');
 	    		visits.deleteCharAt(visits.length() - 1);
 	    	}
+//			add else block on 30th,DEC,2013
+			else
+				visits.append("\\N");
 	    }
 	    
 	    
-
+	    
 	    DBObject address = new BasicDBObject();
 	    if (lead != null && lead.containsField("address") && lead.get("address") != null &&
 	    		lead.get("address") instanceof DBObject)
@@ -1771,28 +1842,36 @@ public class MongodbSynchronization {
 		    		visit.get("type") != null)
 		    	type = (String) visit.get("type");
 		    
-
+			
 		    String visit_id = null;
 		    if (visit != null && visit.containsField("_id") && visit.get("_id") != null)
 		    	visit_id = visit.get("_id").toString();
+//			add else block on 30th,DEC,2013
+			else
+				visit_id="\\N";
+		    
 		    
 		    String lead_id = null;
 		    if (visit != null && visit.containsField("lead") && visit.get("lead") != null)
 		    	lead_id = visit.get("lead").toString();
 		    
-		    String session_id = null;
-		    if (visit != null && visit.containsField("session") && visit.get("session") != null)
-		    	visit_id = visit.get("session").toString();
-
-
-		    output.append(type + '\001');
-		    output.append(visit_id + '\001');
-		    output.append(date_time + '\001');
-		    output.append(lead_id + '\001');
-		    output.append(session_id);
+//		    add else block on 30th,DEC
+		    else
+		    	lead_id="\\N";
+		    
+		    String session_id=null;
+		    if(visit!=null&&visit.containsField("session")&&visit.get("session")!=null)
+		    	session_id=visit.get("session").toString();
+		    
+//		    add else block on 30th,DEC 
+		    else
+		    	session_id="\\N";
 			
-		
-		
+		    output.append(type+'\001');
+		    output.append(visit_id+'\001');
+		    output.append(date_time+'\001');
+		    output.append(lead_id+'\001');
+		    output.append(session_id);
 		
 		return output;
 	}
@@ -2083,7 +2162,7 @@ public class MongodbSynchronization {
 		{
 			startString = args[0];
 			endString = args[1];
-			propPath = "/home/zengmingyu/scripts/testprop.properties";
+			propPath = "E://JAVA workspace//mongodb_data_synchronization//conf//testprop.properties";
 			
 		} else if (args.length == 3)
 		{
