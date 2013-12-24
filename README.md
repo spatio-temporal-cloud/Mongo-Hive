@@ -24,8 +24,9 @@ java, python, hadoop, hive with mysql as the metastore, mongodb. For your inform
 * The "cronjob.log" will contain executing information and standard err out of each phrase of the synchronization: java synchronization, loading data to hive, joinning tables in hive, if any one of these phrase failed, there will be information indicating which phrase has failed, so we can locate problems.
 
 * If you ever want to stop the cronjob.sh, using the following commands:
-
-       crontab -e, then comment the commands with cronjob.sh with "\#"  
+       
+    crontab -e
+then comment the commands with cronjob.sh with "\#"  
 
 ##Install
 
