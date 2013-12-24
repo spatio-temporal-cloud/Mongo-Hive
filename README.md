@@ -26,6 +26,7 @@ java, python, hadoop, hive with mysql as the metastore, mongodb. For your inform
 * If you ever want to stop the cronjob.sh, using the following commands:
        
     crontab -e
+
 then comment the commands with cronjob.sh with "\#"  
 
 ##Install
