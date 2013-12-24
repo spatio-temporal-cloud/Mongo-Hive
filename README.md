@@ -17,14 +17,15 @@ java, python, hadoop, hive with mysql as the metastore, mongodb. For your inform
 
 * The intaller will create a directory "data" under the directory of installer, this "data" directory will contain the txt files of data synchronized back from mongodb before loading to hive with the file extension ".new" and the time expansion the data as the name. The file extenstion will be ".old" after loading to hive. 
 
-(8) The file "cronjob.log"  under the directroy of installer contains the log of the cronjob, if anything goes wrong, we can locate problems using this log, both standard out and standard error out are redirected to "cronjob.log".
+* The file "cronjob.log"  under the directroy of installer contains the log of the cronjob, if anything goes wrong, we can locate problems using this log, both standard out and standard error out are redirected to "cronjob.log".
 
-(9) After the installer completes successfully, the cronjob.sh will be in crontab and it will run automatically.
+* After the installer completes successfully, the cronjob.sh will be in crontab and it will run automatically.
 
-(10) The "cronjob.log" will contain executing information and standard err out of each phrase of the synchronization: java synchronization, loading data to hive, joinning tables in hive, if any one of these phrase failed, there will be information indicating which phrase has failed, so we can locate problems.
+* The "cronjob.log" will contain executing information and standard err out of each phrase of the synchronization: java synchronization, loading data to hive, joinning tables in hive, if any one of these phrase failed, there will be information indicating which phrase has failed, so we can locate problems.
 
-(11) If you ever want to stop the cronjob.sh, using the following commands:
-crontab -e, then comment the commands with cronjob.sh with "\#"  
+* If you ever want to stop the cronjob.sh, using the following commands:
+
+       crontab -e, then comment the commands with cronjob.sh with "\#"  
 
 ##Install
 
