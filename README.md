@@ -29,16 +29,24 @@ crontab -e, then comment the commands with cronjob.sh with "\#"
 ##Install
 
 (1) tar the package with the commands: 
+
       tar -zxvf project_package.tar.gz
+      
 (2) change directory  with the  commands: 
+
       cd project_package
+      
 (3) add execute permissions to the installer.sh, cronjob.sh, deployment.py with 
 the commands:
+
       sudo chmod a+x installer.sh
       sudo chmod a+x cronjob.sh
       sudo chmod a+x deployment.py
+      
 (4) run installer.sh with the commands: 
+
       ./installer.sh
+      
 (5) specify the IP of mongodb server
 (6) specify the port of mongodb
 (7) specify the name of mongodb database storing the data
