@@ -48,20 +48,35 @@ the commands:
       ./installer.sh
       
 (5) specify the IP of mongodb server
+
 (6) specify the port of mongodb
+
 (7) specify the name of mongodb database storing the data
+
 (8) specify the leads collection name, if it's leads, just press enter
+
 (9) specify the sessions collection name, if it's sessions, just press enter
+
 (10) specify the orders collection name, if it's orders, just press enter
+
 (11) specify the apicalls collection name, if it's apicalls, just press enter
+
 (12) specify the errors collection name, if it's errors, just press enter
+
 (13) specify the quals collection name, if it's quals, just press enter
+
 (14) specify the visits collection name, if it's visits, just press enter
+
 (15) specify the erroCodes collection name, if it's errorCodes, just press enter
+
 (16) specify the customers collection name, if it's customers, just press enter
+
 (17) specify the sender@example.com for reporting errors
+
 (18) specify the recipient@example.com for reporting errors
+
 (19) specify the smtp.example.com for reporting errors
+
 (20) enter passwd of current user for installing crontab for the program
 
 
