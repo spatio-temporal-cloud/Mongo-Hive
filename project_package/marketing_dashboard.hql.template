@@ -22,7 +22,7 @@ from leadexplode LEFT OUTER JOIN sessions
 ON(leadexplode.sessionid=sessions.id and leadexplode.day="[DAY]" and sessions.day="[DAY]");
 
 add jar distinctlead.jar;
-create temporary function distinctlead as 'com.hive.udaf.DistinctLead';
+create temporary function distinctlead as 'DistinctLead';
 
 insert overwrite table leaddistinct partition(day="[DAY]")
 select 
