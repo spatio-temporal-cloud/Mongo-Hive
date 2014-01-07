@@ -113,7 +113,7 @@ def mymain():
    print "java -jar synchronization finished!"	
 
   
-   return 0
+   #return 0
    print "loading data to hive....."
    ret = load_data(dest)      
    if ret != 0:
