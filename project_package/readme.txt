@@ -49,7 +49,12 @@ sudo chmod a+x deployment.py
 (19) specify the smtp.example.com for reporting errors
 (20) enter passwd of current user for installing crontab for the program
 
-
+Common Problems
+(1) As we depoly our program in staging environment, we encounterd a few proble ms.
+(2) Hive is configured to use the value of "hive.metastore.warehouse.dir" in "hive-site.xml" as the directory on hadoop to store data, the default value of this attribut is "/user/hive/warehouse", please make sure all the users have read, write and execute permissions on this directory on hadoop.
+(3) please make sure all the users have read, write and execute permissions on directory "/tmp"on hadoop
+(4) If Hadoop enabled the "Trash Policy", it means when user "john" deletes something off hdfs, it will be moved to the directory "/user/john/.Trash" on hdfs. So if you run hive under the user 'john', when you drop databases or tables, the database or table will be moved to the directory "/user/john/.Trash", so please make sure "john" is the owner of this directory and has read, write, execute permissions on this direcotry
+(5) Hive configuration problems are the more common problems, especially Hive not working properly with hadoop will cause problems that hive couldn't submit mapreduce jobs to hadoop. To test wether hive is configured and working properly with hadoop, I have written a "hql" file "testhive.hql" under directory "testhive", before you run this file, please edit this file to add the correct path of files "testta1.txt" and "testta2.txt" and then use the commands "hive -f testhive.hql", if this executes successfully, it means hive is configured and working properly with hadoop
 
 
 
