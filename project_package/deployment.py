@@ -8,7 +8,6 @@ cf = ConfigParser.ConfigParser()
 cf.read("java_sync.properties")
 dest = cf.get("baseconf", "output_file_dest")
 #dest = '/home/zengmingyu/data'
-count = 0
 curDir = os.getcwd()
 #hive_sql='select count(*) from ssp_factbids'
 load_prefix = "load data local inpath " 
@@ -97,10 +96,9 @@ def mymain():
          time.localtime(time.time() - 1800))
    day = time.strftime("%Y%m%d", 
          time.localtime(time.time() - 1800))
-   count = count_new(dest)
-   day="20130904"
-   startTime = '2013-09-04_04:00:00'
-   endTime = '2013-09-04_07:00:00'
+   #day="20130904"
+   #startTime = '2013-09-04_04:00:00'
+   #endTime = '2013-09-04_07:00:00'
    propPath = curDir + '/java_sync.properties'
    #return 0
    
