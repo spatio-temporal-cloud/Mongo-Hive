@@ -1,0 +1,149 @@
+use maize;
+insert overwrite table ordersession partition(day="[DAY]")
+select 
+orders.date_time as date_time,
+orders.id as orderid,
+orders.providerId as providerId,
+orders.providerCode as providerCode,
+orders.providerName as providerName,
+orders.trackingId as trackingId,
+orders.API as API,
+orders.orderConfirmationId as orderConfirmationId,
+orders.lineItemDescription as lineItemDescription,
+orders.price as price,
+orders.term as term,
+orders.description as description,
+orders.verticalCode as verticalCode,
+orders.lineItemCount as lineItemCount,
+orders.productName as productName,
+sessions.userAgent_operatingSystem as userAgent_operatingSystem,
+sessions.userAgent_browser as userAgent_browser,
+sessions.userAgent_deviceType as userAgent_deviceType,
+sessions.userAgent_mobileDevice as userAgent_mobileDevice,
+sessions.id as sessionid,
+sessions.lead as leadid,
+sessions.agent as agent,
+sessions.callCenter as callCenter,
+sessions.agent_callCenterName as agent_callCenterName
+from 
+(select * from orders where orders.day="[DAY]")orders
+LEFT OUTER JOIN
+(select * from sessions where sessions.day="[DAY]")sessions 
+ON(orders.session=sessions.id);
+
+
+
+
+insert overwrite table ordersessionlead partition(day="[DAY]")
+select 
+ordersession.date_time as date_time,
+ordersession.orderid as orderid,
+ordersession.providerId as providerId,
+ordersession.providerCode as providerCode,
+ordersession.providerName as providerName,
+ordersession.trackingId as trackingId,
+ordersession.API as API,
+ordersession.orderConfirmationId as orderConfirmationId,
+ordersession.lineItemDescription as lineItemDescription,
+ordersession.price as price,
+ordersession.term as term,
+ordersession.description as description,
+ordersession.verticalCode as verticalCode,
+ordersession.lineItemCount as lineItemCount,
+ordersession.productname as productname,
+ordersession.userAgent_operatingSystem as userAgent_operatingSystem,
+ordersession.userAgent_browser as userAgent_browser,
+ordersession.userAgent_deviceType as userAgent_deviceType,
+ordersession.userAgent_mobileDevice as userAgent_mobileDevice,
+ordersession.sessionid as sessionid,
+ordersession.agent as agent,
+ordersession.callCenter as callCenter,
+ordersession.agent_callCenterName as agent_callCenterName,
+leads.id as leadid,
+leads.address_city as address_city,
+leads.address_line as address_line,
+leads.address_state as address_state,
+leads.address_suite as address_suite,
+leads.address_zip as address_zip,
+leads.leadSource as leadSource,
+leads.leadSourceName as leadSourceName,
+leads.providerPhone as  providerPhone,
+leads.semTracking_naturalTerms as semTracking_naturalTerms,
+leads.semTracking_searchEngine as semTracking_searchEngine,
+leads.semTracking_adGroup as semTracking_adGroup,
+leads.semTracking_campaign as semTracking_campaign,
+leads.semTracking_terms as semTracking_terms
+from
+(select * from ordersession where ordersession.day="[DAY]")ordersession
+LEFT OUTER JOIN 
+(select * from leads where leads.day="[DAY]")leads
+ON(ordersession.leadid=leads.id);
+
+
+
+insert overwrite table customerexplode partition(day="[DAY]")
+select 
+id as customerid,
+customerName,
+email,
+phoneNumber,
+leadid
+from customers LATERAL VIEW explode(leads) leadarray as leadid
+where customers.day="[DAY]";
+
+
+
+insert overwrite table orderdetail partition(day="[DAY]")
+select 
+ordersessionlead.date_time as date_time,
+ordersessionlead.orderid as orderid,
+ordersessionlead.providerId as providerId,
+ordersessionlead.providerCode as providerCode,
+ordersessionlead.providerName as providerName,
+ordersessionlead.trackingId as trackingId,
+ordersessionlead.API as API,
+ordersessionlead.orderConfirmationId as orderConfirmationId,
+ordersessionlead.lineItemDescription as lineItemDescription,
+ordersessionlead.price as price,
+ordersessionlead.term as term,
+ordersessionlead.description as description,
+ordersessionlead.verticalCode as verticalCode,
+ordersessionlead.lineItemCount as lineItemCount,
+ordersessionlead.productName as productName,
+ordersessionlead.userAgent_operatingSystem as userAgent_operatingSystem,
+ordersessionlead.userAgent_browser as userAgent_browser,
+ordersessionlead.userAgent_deviceType as userAgent_deviceType,
+ordersessionlead.userAgent_mobileDevice as userAgent_mobileDevice,
+ordersessionlead.sessionid as sessionid,
+ordersessionlead.agent as agent,
+ordersessionlead.callCenter as callCenter,
+ordersessionlead.agent_callCenterName as agent_callCenterName,
+ordersessionlead.leadid as leadid,
+ordersessionlead.address_city as address_city,
+ordersessionlead.address_line as address_line,
+ordersessionlead.address_state as address_state,
+ordersessionlead.address_suite as address_suite,
+ordersessionlead.address_zip as address_zip,
+ordersessionlead.leadSource as leadSource,
+ordersessionlead.leadSourceName as leadSourceName,
+ordersessionlead.providerPhone as providerPhone,
+ordersessionlead.semTracking_naturalTerms as semTracking_naturalTerms,
+ordersessionlead.semTracking_searchEngine as semTracking_searchEngine,
+ordersessionlead.semTracking_adGroup as semTracking_adGroup,
+ordersessionlead.semTracking_campaign as semTracking_campaign,
+ordersessionlead.semTracking_terms as semTracking_terms,
+customerexplode.customerid as customerid,
+customerexplode.customerName as customerName,
+customerexplode.email as email,
+customerexplode.phoneNumber as phoneNumber
+from
+(select * from ordersessionlead where ordersessionlead.day="[DAY]")ordersessionlead
+LEFT OUTER JOIN 
+(select * from customerexplode where customerexplode.day="[DAY]")customerexplode 
+ON(ordersessionlead.leadid=customerexplode.leadid);
+
+! echo "marketing dashboard3 [DAY] completes at ";
+! date;
+! echo " ";
+
+

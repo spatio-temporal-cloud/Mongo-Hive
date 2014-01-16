@@ -44,7 +44,7 @@ def load_data(path):
             loadhql.write(hiveql)
 #            print hiveql
    loadhql.close()
-   ret = os.system("hive -f loaddata.hql")
+   ret = os.system("hive -S -f loaddata.hql")
 
    loadhql = os.path.join(os.getcwd(), "loaddata.hql")
    os.remove(loadhql)
@@ -64,21 +64,61 @@ def load_data(path):
 def join_tables():
    #print "joinning tables"
    #print day
-   marketing_dashboard_joinhql = "sed -e \'s/\[DAY\]/" + day + "/g\' marketing_dashboard.hql.template > marketing_dashboard.hql" 
-   support_dashboard_joinhql = "sed -e \'s/\[DAY\]/" + day + "/g\' support_dashboard.hql.template > support_dashboard.hql" 
+   marketing_dashboard_joinhql1 = "sed -e \'s/\[DAY\]/" + day + "/g\' marketing_dashboard1.hql.template > marketing_dashboard1.hql" 
+   marketing_dashboard_joinhql2 = "sed -e \'s/\[DAY\]/" + day + "/g\' marketing_dashboard2.hql.template > marketing_dashboard2.hql" 
+   marketing_dashboard_joinhql3 = "sed -e \'s/\[DAY\]/" + day + "/g\' marketing_dashboard3.hql.template > marketing_dashboard3.hql" 
+   marketing_dashboard_joinhql4 = "sed -e \'s/\[DAY\]/" + day + "/g\' marketing_dashboard4.hql.template > marketing_dashboard4.hql" 
+   support_dashboard_joinhql1 = "sed -e \'s/\[DAY\]/" + day + "/g\' support_dashboard1.hql.template > support_dashboard1.hql" 
+   support_dashboard_joinhql2 = "sed -e \'s/\[DAY\]/" + day + "/g\' support_dashboard2.hql.template > support_dashboard2.hql" 
 
-   ret = os.system(support_dashboard_joinhql)
+   ret = os.system(support_dashboard_joinhql1)
    if ret != 0:
       return 1
-   ret = os.system(marketing_dashboard_joinhql)
+
+   ret = os.system(support_dashboard_joinhql2)
    if ret != 0:
       return 1
-   ret = os.system("hive -f support_dashboard.hql")
+
+   ret = os.system(marketing_dashboard_joinhql1)
    if ret != 0:
       return 1
-   ret = os.system("hive -f marketing_dashboard.hql")
+
+   ret = os.system(marketing_dashboard_joinhql2)
    if ret != 0:
       return 1
+
+   ret = os.system(marketing_dashboard_joinhql3)
+   if ret != 0:
+      return 1
+
+   ret = os.system(marketing_dashboard_joinhql4)
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f support_dashboard1.hql &")
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f support_dashboard2.hql &")
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f marketing_dashboard1.hql &")
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f marketing_dashboard2.hql &")
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f marketing_dashboard3.hql &")
+   if ret != 0:
+      return 1
+
+   ret = os.system("hive -S -f marketing_dashboard4.hql &")
+   if ret != 0:
+      return 1
+
    return 0
   
    #print marketing_dashboard_joinhql
@@ -96,30 +136,40 @@ def mymain():
          time.localtime(time.time() - 1800))
    day = time.strftime("%Y%m%d", 
          time.localtime(time.time() - 1800))
-   #day="20130904"
-   #startTime = '2013-09-04_04:00:00'
-   #endTime = '2013-09-04_07:00:00'
+   #day="20140101"
+   #startTime = '2013-12-31_00:00:00'
+   #endTime = '2014-01-12_24:00:00'
    propPath = curDir + '/java_sync.properties'
    #return 0
    
-   print "java -jar synchronization is running...."
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
+   print "java -jar synchronization is running...." 
    ret = os.system('java -jar synchronization.jar ' + startTime + ' ' + endTime 
 + ' ' + propPath)
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',   
    if ret != 0:
       print "java -jar synchronization failed!"
       return 1
    print "java -jar synchronization finished!"	
+   
 
   
    #return 0
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
    print "loading data to hive....."
    ret = load_data(dest)      
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
    if ret != 0:
       print "loading data to hive failed!"
       return 1
    print "loading data to hive finished!"
+
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
    print "joinning tables in hive..."
+   print  "test 100 join day = " + day 
    ret = join_tables()
+   #ret = 0
+   print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
    if ret != 0:
       print "joinning tables in hive failed!"
       return 1

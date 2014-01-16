@@ -145,7 +145,7 @@ echo "smtp=""$smtp"
 
 exec > "$curDir""/cron.txt"
 cronjob="$curDir""/cronjob.sh"
-echo "*/5 * * * * ""$cronjob"" >> ""$curDir""/cronjob.log" "2>&1" 
+echo "*/30 * * * * ""$cronjob"" >> ""$curDir""/cronjob.log" "2>&1" 
 
 exec > /dev/tty
 sudo crontab -u "$user" cron.txt
