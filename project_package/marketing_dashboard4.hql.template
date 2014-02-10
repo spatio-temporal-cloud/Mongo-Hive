@@ -1,0 +1,51 @@
+! echo "marketing dashboard4 [DAY] starts at ";
+! date;
+! echo ;
+
+
+use maize;
+
+insert overwrite table visitlead partition(day="[DAY]")
+select 
+visits.id as visitid,
+visits.date_time as date_time,
+visits.lead as leadid,
+visits.session as sessionid,
+leads.semTracking_campaign as semTracking_campaign,
+leads.semTracking_adGroup as semTracking_adGroup,
+leads.semTracking_terms as semTracking_terms,
+leads.semTracking_searchEngine as semTracking_searchEngine
+from
+(select * from  visits where visits.day="[DAY]")visits
+LEFT OUTER JOIN 
+(select * from leads where leads.day="[DAY]")leads
+ON(visits.lead=leads.id);
+
+
+
+
+
+insert overwrite table visitratio partition(day="[DAY]")
+select 
+visitlead.visitid as visitid,
+visitlead.date_time as date_time,
+visitlead.leadid as leadid,
+visitlead.sessionid as sessionid,
+sessions.order1 as orderid,
+visitlead.semTracking_campaign as semTracking_campaign,
+visitlead.semTracking_adGroup as semTracking_adGroup,
+visitlead.semTracking_terms as semTracking_terms,
+visitlead.semTracking_searchEngine as semTracking_searchEngine
+from 
+(select * from visitlead where visitlead.day="[DAY]")visitlead
+LEFT OUTER JOIN 
+(select * from sessions where sessions.day="[DAY]")sessions
+ON(visitlead.sessionid=sessions.id);
+
+! echo "marketing dashboard4 [DAY] completes at ";
+! date;
+! echo ;
+
+
+
+

@@ -1,0 +1,93 @@
+! echo "marketing dashboard2 [DAY] starts at ";
+! date;
+! echo ;
+
+use maize;
+insert overwrite table sessionlead partition(day="[DAY]")
+select
+sessions.date_time as date_time,
+sessions.id as sessionid,
+sessions.lead as leadid,
+sessions.userAgent_operatingSystem as userAgent_operatingSystem,
+sessions.userAgent_browser as userAgent_browser,
+sessions.userAgent_deviceType as userAgent_deviceType,
+sessions.userAgent_mobileDevice as userAgent_mobileDevice,
+sessions.order1 as orderid,
+sessions.agent as agent,
+sessions.callCenter as callCenter,
+sessions.agent_callCenterName as agent_callCenterName,
+leads.address_city as address_city,
+leads.address_line as address_line,
+leads.address_state as address_state,
+leads.address_suite as address_suite,
+leads.address_zip as address_zip,
+leads.leadSource as leadSource,
+leads.leadSourceName as leadSourceName,
+leads.providerPhone as providerPhone,
+leads.semTracking_naturalTerms as semTracking_naturalTerms,
+leads.semTracking_searchEngine as semTracking_searchEngine,
+leads.semTracking_adGroup as semTracking_adGroup,
+leads.semTracking_campaign as semTracking_campaign,
+leads.semTracking_terms as semTracking_terms
+from 
+(select * from sessions where sessions.day="[DAY]")sessions
+LEFT OUTER JOIN 
+(select * from leads where leads.day="[DAY]")leads 
+ON(sessions.lead=leads.id);
+
+
+
+insert overwrite table sessiondetail  partition (day="[DAY]")
+select
+sessionlead.date_time as date_time,
+sessionlead.sessionid as sessionid,
+sessionlead.leadid as leadid,
+sessionlead.userAgent_operatingSystem as userAgent_operatingSystem,
+sessionlead.userAgent_browser as userAgent_browser,
+sessionlead.userAgent_deviceType as userAgent_deviceType,
+sessionlead.userAgent_mobileDevice as userAgent_mobileDevice,
+sessionlead.agent as agent,
+sessionlead.callCenter as callCenter,
+sessionlead.agent_callCenterName as agent_callCenterName,
+sessionlead.address_city as address_city,
+sessionlead.address_line as address_line,
+sessionlead.address_state as address_state,
+sessionlead.address_suite as address_suite,
+sessionlead.address_zip as address_zip,
+sessionlead.leadSource as leadSource,
+sessionlead.leadSourceName as leadSourceName,
+sessionlead.providerPhone as providerPhone,
+sessionlead.semTracking_naturalTerms as semTracking_naturalTerms,
+sessionlead.semTracking_searchEngine as semTracking_searchEngine,
+sessionlead.semTracking_adGroup as semTracking_adGroup,
+sessionlead.semTracking_campaign as semTracking_campaign,
+sessionlead.semTracking_terms as semTracking_terms,
+orders.id as orderid,
+orders.providerId as providerId,
+orders.providerCode as providerCode,
+orders.providerName as providerName,
+orders.trackingId as trackingId,
+orders.api as api,
+orders.orderConfirmationId as orderConfirmationId,
+orders.lineItemDescription as lineItemDescription,
+orders.price as price,
+orders.term as term,
+orders.description as description,
+orders.verticalCode as verticalCode,
+orders.lineItemCount as lineItemCount,
+orders.productName as productName
+from 
+(select * from sessionlead where sessionlead.day="[DAY]")sessionlead 
+LEFT OUTER JOIN 
+(select * from orders where orders.day="[DAY]")orders
+ON(sessionlead.orderid=orders.id);
+
+
+! echo "marketing dashboard2 [DAY] completes at ";
+! date;
+! echo ;
+
+
+
+
+
