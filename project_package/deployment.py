@@ -13,11 +13,7 @@ curDir = os.getcwd()
 load_prefix = "load data local inpath " 
 load_midfix =  " overwrite into table "
 load_suffix = " partition (day=\""
-startTime = "2013"
-endTime = "2013"
-day = time.strftime('%Y%m%d', time.localtime(time.time()))
-#day = "20130904"
-
+day=20140101
 
 
 
@@ -126,20 +122,20 @@ def join_tables():
 
 
 
-def mymain():
-#   endTime = time.time()
-   #print time.time()
-   global count, day, startTime, endTime
-   startTime = time.strftime("%Y-%m-%d_00:00:00", 
-         time.localtime(time.time() - 1800))
-   endTime = time.strftime("%Y-%m-%d_24:00:00", 
-         time.localtime(time.time() - 1800))
-   day = time.strftime("%Y%m%d", 
-         time.localtime(time.time() - 1800))
+def mymain(day1, day2):
+   global day;
+   day = day1
+   startTime = day2 + '_00:00:00'
+   endTime = day2 + '_24:00:00'
+   propPath = curDir + '/java_sync.properties'
+   
    #day="20140210"
    #startTime = '2014-02-10_00:00:00'
    #endTime = '2014-02-10_24:00:00'
-   propPath = curDir + '/java_sync.properties'
+   
+   #print day
+   #print startTime
+   #print endTime
    #return 0
    
    print time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime(time.time())) + ' ',
@@ -182,7 +178,9 @@ def mymain():
 if __name__ == '__main__':
    #join_tables()
    #print "starting deployment.py...."
-   if mymain() != 0:
+   day1 = sys.argv[1]
+   day2 = sys.argv[2]
+   if mymain(day1, day2) != 0:
       #print "deployment.py failed!"
       sys.exit(1)
    #print "deployment.py finished!"

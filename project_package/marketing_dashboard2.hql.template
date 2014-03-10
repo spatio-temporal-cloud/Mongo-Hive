@@ -75,7 +75,8 @@ orders.term as term,
 orders.description as description,
 orders.verticalCode as verticalCode,
 orders.lineItemCount as lineItemCount,
-orders.productName as productName
+orders.productName as productName,
+orders.offerId as offerId
 from 
 (select * from sessionlead where sessionlead.day="[DAY]")sessionlead 
 LEFT OUTER JOIN 

@@ -131,7 +131,8 @@ orders.term as term,
 orders.description as description,
 orders.verticalCode as verticalCode,
 orders.lineItemCount as lineItemCount,
-orders.productName as productName
+orders.productName as productName,
+orders.offerId as offerId 
 from
 (select * from  leadsession3  where leadsession3.day="[DAY]")leadsession3
 LEFT OUTER JOIN 

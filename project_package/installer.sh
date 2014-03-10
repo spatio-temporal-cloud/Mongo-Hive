@@ -111,7 +111,7 @@ else
         echo installer failed!
 	exit 1;
 fi
-hive -f create_table_wxy.hql
+hive -f create_table.hql
 
 if [ $? ]
 then
